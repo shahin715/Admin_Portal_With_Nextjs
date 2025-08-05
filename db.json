@@ -1,11 +1,46 @@
 
 {
   "summary": [
-    {
-      "sales": 6.5,
-      "customers": 12,
-      "products": 47,
-      "revenue": 128
-    }
-  ]
+    { "sales": 6.5, "customers": 12, "products": 47, "revenue": 128 }
+  ],
+  "salesReport": {
+    "daily": [
+      { "date": "10 Mar", "value1": 80, "value2": 60 },
+      { "date": "11 Mar", "value1": 70, "value2": 50 },
+      { "date": "12 Mar", "value1": 85, "value2": 20 },
+      { "date": "13 Mar", "value1": 65, "value2": 40 },
+      { "date": "14 Mar", "value1": 40, "value2": 20 },
+      { "date": "15 Mar", "value1": 75, "value2": 55 },
+      { "date": "16 Mar", "value1": 90, "value2": 30 },
+      { "date": "17 Mar", "value1": 60, "value2": 45 },
+      { "date": "18 Mar", "value1": 80, "value2": 50 },
+      { "date": "19 Mar", "value1": 60, "value2": 25 },
+      { "date": "20 Mar", "value1": 90, "value2": 35 },
+      { "date": "21 Mar", "value1": 50, "value2": 40 }
+    ],
+    "monthly": [
+      { "date": "Jan", "value1": 600, "value2": 400 },
+      { "date": "Feb", "value1": 700, "value2": 500 },
+      { "date": "Mar", "value1": 850, "value2": 200 },
+      { "date": "Apr", "value1": 650, "value2": 400 },
+      { "date": "May", "value1": 400, "value2": 200 },
+      { "date": "Jun", "value1": 750, "value2": 550 },
+       { "date": "Jul", "value1": 600, "value2": 400 },
+      { "date": "Aug", "value1": 700, "value2": 500 },
+      { "date": "Sep", "value1": 850, "value2": 200 },
+      { "date": "Oct", "value1": 650, "value2": 400 },
+      { "date": "Nov", "value1": 400, "value2": 200 },
+      { "date": "Dec", "value1": 750, "value2": 550 }
+    ],
+    "yearly": [
+        { "date": "2017", "value1": 5000, "value2": 3000 },
+      { "date": "2018", "value1": 5500, "value2": 3500 },
+      { "date": "2019", "value1": 6000, "value2": 4000 },
+      { "date": "2020", "value1": 6500, "value2": 4500 },
+      { "date": "2021", "value1": 5000, "value2": 3000 },
+      { "date": "2022", "value1": 5500, "value2": 3500 },
+      { "date": "2023", "value1": 6000, "value2": 4000 },
+      { "date": "2024", "value1": 6500, "value2": 4500 }
+    ]
+  }
 }
