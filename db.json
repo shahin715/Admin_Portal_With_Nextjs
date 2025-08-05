@@ -1,4 +1,3 @@
-
 {
   "summary": [
     { "sales": 6.5, "customers": 12, "products": 47, "revenue": 128 }
@@ -25,7 +24,7 @@
       { "date": "Apr", "value1": 650, "value2": 400 },
       { "date": "May", "value1": 400, "value2": 200 },
       { "date": "Jun", "value1": 750, "value2": 550 },
-       { "date": "Jul", "value1": 600, "value2": 400 },
+      { "date": "Jul", "value1": 600, "value2": 400 },
       { "date": "Aug", "value1": 700, "value2": 500 },
       { "date": "Sep", "value1": 850, "value2": 200 },
       { "date": "Oct", "value1": 650, "value2": 400 },
@@ -33,7 +32,7 @@
       { "date": "Dec", "value1": 750, "value2": 550 }
     ],
     "yearly": [
-        { "date": "2017", "value1": 5000, "value2": 3000 },
+      { "date": "2017", "value1": 5000, "value2": 3000 },
       { "date": "2018", "value1": 5500, "value2": 3500 },
       { "date": "2019", "value1": 6000, "value2": 4000 },
       { "date": "2020", "value1": 6500, "value2": 4500 },
@@ -42,5 +41,147 @@
       { "date": "2023", "value1": 6000, "value2": 4000 },
       { "date": "2024", "value1": 6500, "value2": 4500 }
     ]
-  }
+  },
+  "products": [
+    {
+      "id": "1",
+      "name": "Copier",
+      "productCode": "1718635406",
+      "category": "Tablets",
+      "brandName": "Microsoft",
+      "brandColor": "#2563EB",
+      "price": "$107.45",
+      "stockStatus": "Available",
+      "stockQuantity": "8.04k stock",
+      "views": "1.23k",
+      "viewsChange": "7.65%",
+      "viewsChangeType": "increase"
+    },
+    {
+      "id": "2",
+      "name": "Clock",
+      "productCode": "6595752310",
+      "category": "Tablets",
+      "brandName": "Google",
+      "brandColor": "#34A853",
+      "price": "$599.75",
+      "stockStatus": "Available",
+      "stockQuantity": "2.58k stock",
+      "views": "65.39k",
+      "viewsChange": "2.82%",
+      "viewsChangeType": "increase"
+    },
+    {
+      "id": "3",
+      "name": "Curling iron",
+      "productCode": "5870577187",
+      "category": "Gaming consoles",
+      "brandName": "Pinterest",
+      "brandColor": "#E60023",
+      "price": "$784.94",
+      "stockStatus": "Limited Supply",
+      "stockQuantity": "22 stock",
+      "views": "23.33k",
+      "viewsChange": "1.07%",
+      "viewsChangeType": "decrease"
+    },
+    {
+      "id": "4",
+      "name": "Curling iron",
+      "productCode": "7543583555",
+      "category": "Tablets",
+      "brandName": "Pfizer",
+      "brandColor": "#0C3C78",
+      "price": "$502.23",
+      "stockStatus": "Available",
+      "stockQuantity": "3.56k stock",
+      "views": "68.12k",
+      "viewsChange": "0.25%",
+      "viewsChangeType": "decrease"
+    },
+    {
+      "id": "5",
+      "name": "Bulb",
+      "productCode": "3711580971",
+      "category": "Smartphones",
+      "brandName": "Pfizer",
+      "brandColor": "#0C3C78",
+      "price": "$878.12",
+      "stockStatus": "Not available",
+      "stockQuantity": "0 stock",
+      "views": "89.15k",
+      "viewsChange": "5.03%",
+      "viewsChangeType": "increase"
+    },
+    {
+      "id": "6",
+      "name": "Backup charger",
+      "productCode": "8940068402",
+      "category": "Drones",
+      "brandName": "Behance",
+      "brandColor": "#0057FF",
+      "price": "$223.35",
+      "stockStatus": "Available",
+      "stockQuantity": "877 stock",
+      "views": "32.83k",
+      "viewsChange": "9.98%",
+      "viewsChangeType": "increase"
+    },
+    {
+      "id": "7",
+      "name": "Bulb",
+      "productCode": "3804603080",
+      "category": "Cameras",
+      "brandName": "Microsoft",
+      "brandColor": "#2563EB",
+      "price": "$166.72",
+      "stockStatus": "Available",
+      "stockQuantity": "3.15k stock",
+      "views": "4.5k",
+      "viewsChange": "7.43%",
+      "viewsChangeType": "decrease"
+    },
+    {
+      "id": "8",
+      "name": "Copier",
+      "productCode": "6827055795",
+      "category": "Drones",
+      "brandName": "Pinterest",
+      "brandColor": "#E60023",
+      "price": "$241.10",
+      "stockStatus": "Limited Supply",
+      "stockQuantity": "59 stock",
+      "views": "36.39k",
+      "viewsChange": "0.88%",
+      "viewsChangeType": "decrease"
+    },
+    {
+      "id": "9",
+      "name": "Air conditioner",
+      "productCode": "7457003165",
+      "category": "Tablets",
+      "brandName": "Microsoft",
+      "brandColor": "#2563EB",
+      "price": "$931.00",
+      "stockStatus": "Available",
+      "stockQuantity": "4.72k stock",
+      "views": "84.39k",
+      "viewsChange": "6.11%",
+      "viewsChangeType": "increase"
+    },
+    {
+      "id": "10",
+      "name": "Ceiling fan",
+      "productCode": "1447113188",
+      "category": "Tablets",
+      "brandName": "Vercel",
+      "brandColor": "#111827",
+      "price": "$762.04",
+      "stockStatus": "Available",
+      "stockQuantity": "3.33k stock",
+      "views": "97.79k",
+      "viewsChange": "5.14%",
+      "viewsChangeType": "increase"
+    }
+  ]
 }
