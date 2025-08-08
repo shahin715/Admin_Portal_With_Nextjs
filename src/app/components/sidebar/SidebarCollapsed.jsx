@@ -67,7 +67,7 @@ export default function SidebarCollapsed() {
 
       {/* Bottom section */}
       <div className="flex flex-col items-center space-y-6 mt-auto mb-2">
-        <SidebarIcon icon={Settings} label="Settings" href="/settings" isActive={pathname === "/settings"} />
+        <SidebarIcon icon={Settings} label="Settings" href="/notFound" isActive={pathname === "/notFound"} />
         <div className="relative">
           <img
             src="/user.png"
