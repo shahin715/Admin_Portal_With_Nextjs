@@ -1,45 +1,81 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  LayoutDashboard,
+  ShoppingCart,
+  Package,
+  LogOut,
+  User,
+  X
+} from "lucide-react";
+import { useAuth } from "@/app/context/authContext";
 
 export default function SidebarExpanded({ onClose }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, logout } = useAuth();
+
+  const linkClass = (path) =>
+    `flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition ${
+      pathname === path
+        ? "bg-zinc-800 text-white"
+        : "text-zinc-400 hover:text-white hover:bg-zinc-800"
+    }`;
 
   return (
-    <div className="h-screen bg-zinc-900 text-white p-4 w-full overflow-y-auto">
-      {/* Top */}
-      <div className="flex justify-between items-center mb-6">
-        <h4 className="text-gray-400 text-xl tracking-wider">Dashboards</h4>
-        <button onClick={onClose}>
-          <ChevronLeft className="text-blue-400 w-5 h-5" />
+    <aside className="h-full w-64 bg-zinc-900 text-white border-r border-zinc-800 p-4 flex flex-col justify-between relative">
+      {/* Close Button */}
+      {onClose && (
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 text-gray-400 hover:text-white"
+        >
+          <X className="w-5 h-5" />
         </button>
+      )}
+
+      {/* Top Section */}
+      <div>
+        <h1 className="text-lg font-semibold mb-6 px-2">Admin Panel</h1>
+        <nav className="flex flex-col gap-2">
+          <Link href="/" className={linkClass("/")}>
+            <LayoutDashboard className="w-5 h-5" />
+            Dashboard
+          </Link>
+          <Link href="/products" className={linkClass("/products")}>
+            <Package className="w-5 h-5" />
+            Products
+          </Link>
+          <Link href="/cart" className={linkClass("/cart")}>
+            <ShoppingCart className="w-5 h-5" />
+            Cart
+          </Link>
+        </nav>
       </div>
 
-      {/* Navigation */}
-      <div className="px-2">
-        <ul className="space-y-1">
-          {[
-            { label: "Sales", href: "/" },
-            { label: "CRM Analytics", href: "/crm" },
-            { label: "Orders", href: "/orders" },
-          ].map(({ label, href }) => (
-            <li key={href}>
-              <Link
-                href={href}
-                className={`flex items-center gap-2 px-2 py-1 rounded-md text-sm font-medium ${
-                  pathname === href
-                    ? "bg-zinc-800 text-blue-400"
-                    : "text-gray-400 hover:bg-zinc-800 hover:text-white"
-                }`}
-              >
-                {label}
-              </Link>
-            </li>
-          ))}
-        </ul>
+      {/* Bottom Section - Mobile Auth Button */}
+      <div className="sm:hidden mt-6">
+        {user ? (
+          <button
+            onClick={() => logout()}
+            className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium bg-zinc-800 text-red-400 hover:bg-zinc-700 w-full"
+          >
+            <LogOut className="w-5 h-5" />
+            Logout
+          </button>
+        ) : (
+          <button
+            onClick={() => router.push("/login")}
+            className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium bg-zinc-800 text-gray-400 hover:bg-zinc-700 w-full"
+          >
+            <User className="w-5 h-5" />
+            Login
+          </button>
+        )}
       </div>
-    </div>
+    </aside>
   );
 }
+

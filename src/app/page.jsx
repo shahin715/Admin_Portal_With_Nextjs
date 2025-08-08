@@ -1,35 +1,26 @@
 "use client";
 import DashboardLayout from "./DashboardLayout";
-// import SalesReport from "./components/salesReport/SalesReport";
-// import SalesSummary from "./components/salesSummary/salesSummary";
-import ProductTable from "./components/productTable/ProductTable"
+import ProductTable from "./components/productTable/ProductTable";
+import SalesSummary from "./components/salesSummary/SalesSummary";
+
+
+import ActivityDashboard from "./components/activityDashboard/ActivityDashboard";
+
 
 import SummaryCards from "./components/summaryCards/SummaryCards";
 export default function HomePage() {
   return (
-    <div className="bg-red-800">
+    <div className="">
       <DashboardLayout>
       <div className="">
 <SummaryCards/>
-     <SummaryCards/>
-     <SummaryCards/>
-     <SummaryCards/>
-     <SummaryCards/>
-     <SummaryCards/>
-     <SummaryCards/>
-     <SummaryCards/>
-     <SummaryCards/>
-     <SummaryCards/>
-     <SummaryCards/>
-     <SummaryCards/>
-     <SummaryCards/>
-     <SummaryCards/>
-     <SummaryCards/>
-     <SummaryCards/>
-     <SummaryCards/>
-     <SummaryCards/>
-     <SummaryCards/>
+
+     
+    <SalesSummary/>
      <ProductTable/>
+   
+     
+     <ActivityDashboard/>
       </div>
      
   

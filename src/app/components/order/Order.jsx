@@ -7,7 +7,7 @@ export default function OrderStats({
   rating = 85,
   orders = "22.6k",
   ratingCardHeight = "h-full",
-  ordersCardHeight = "h-full",
+  ordersCardHeight = "h-[240px]",
 }) {
   const isCompact = ratingCardHeight === "h-[150px]" || ratingCardHeight === "h-[100px]";
 

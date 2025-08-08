@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Home,
-  Gift,
+  Package,
   LayoutGrid,
   AlignJustify,
   Users,
@@ -10,27 +12,38 @@ import {
   Settings,
 } from "lucide-react";
 
-function SidebarIcon({ icon: Icon, label, isActive = false }) {
+function SidebarIcon({ icon: Icon, label, href, isActive }) {
   const iconColorClass = isActive
     ? "text-blue-400"
     : "text-gray-400 group-hover:text-gray-200";
   const bgColorClass = isActive ? "bg-[#1E293B]" : "group-hover:bg-gray-800";
 
   return (
-    <div className="group relative flex items-center justify-center w-12 h-12 rounded-lg transition-colors duration-200 cursor-pointer">
-      <div className={`flex items-center justify-center w-full h-full rounded-lg ${bgColorClass}`}>
+    <Link href={href} className="group relative w-12 h-12">
+      <div
+        className={`flex items-center justify-center w-full h-full rounded-lg transition-colors duration-200 cursor-pointer ${bgColorClass}`}
+      >
         <Icon className={`w-6 h-6 ${iconColorClass}`} />
       </div>
       <span className="absolute left-14 z-10 bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
         {label}
       </span>
-    </div>
+    </Link>
   );
 }
 
 export default function SidebarCollapsed() {
+  const pathname = usePathname();
+
   return (
-    <div className="flex flex-col items-center w-full h-full py-4">
+    <aside
+      className={`
+        hidden lg:flex fixed lg:static
+        top-0 left-0 z-50 w-20 h-screen
+        flex-col items-center py-4
+        bg-zinc-900 border-r border-zinc-800
+      `}
+    >
       {/* Logo */}
       <div className="mb-8">
         <img
@@ -42,17 +55,19 @@ export default function SidebarCollapsed() {
         />
       </div>
 
+      {/* Nav icons */}
       <nav className="flex flex-col items-center space-y-6 flex-grow">
-        <SidebarIcon icon={Home} label="Home" />
-        <SidebarIcon icon={Gift} label="Gifts" />
-        <SidebarIcon icon={LayoutGrid} label="Dashboard" />
-        <SidebarIcon icon={AlignJustify} label="Menu" />
-        <SidebarIcon icon={Users} label="Users" />
-        <SidebarIcon icon={Lightbulb} label="Ideas" />
+        <SidebarIcon icon={Home} label="Home" href="/" isActive={pathname === "/"} />
+        <SidebarIcon icon={Package} label="Products" href="/products" isActive={pathname === "/products"} />
+        <SidebarIcon icon={LayoutGrid} label="Dashboard" href="/notFound" isActive={pathname === "/notFound"} />
+        <SidebarIcon icon={AlignJustify} label="Menu" href="/notFound" isActive={pathname === "/notFound"} />
+        <SidebarIcon icon={Users} label="Users" href="/notFound" isActive={pathname === "/notFound"} />
+        <SidebarIcon icon={Lightbulb} label="Ideas" href="/notFound" isActive={pathname === "/notFound"} />
       </nav>
 
+      {/* Bottom section */}
       <div className="flex flex-col items-center space-y-6 mt-auto mb-2">
-        <SidebarIcon icon={Settings} label="Settings" />
+        <SidebarIcon icon={Settings} label="Settings" href="/settings" isActive={pathname === "/settings"} />
         <div className="relative">
           <img
             src="/user.png"
@@ -64,9 +79,6 @@ export default function SidebarCollapsed() {
           <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-gray-950"></span>
         </div>
       </div>
-    </div>
+    </aside>
   );
 }
-
-
-

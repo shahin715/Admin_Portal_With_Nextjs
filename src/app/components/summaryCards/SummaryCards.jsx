@@ -15,79 +15,74 @@ export default function SummaryCards() {
   useEffect(() => {
     axios
       .get("http://localhost:5001/summary")
-      .then(res => {
-        setSummary(res.data[0]); // db.json returns array
-      })
+      .then(res => setSummary(res.data[0]))
       .catch(err => console.error("API fetch error", err));
   }, []);
 
+  const cards = [
+    {
+      title: "Sales",
+      value: `${summary.sales}k`,
+      growth: "4.3%",
+      icon: <Presentation className="w-5 h-5 text-blue-400" />,
+      iconBg: "bg-blue-900/20",
+      valueColor: "text-blue-400",
+    },
+    {
+      title: "Customers",
+      value: `${summary.customers}k`,
+      growth: "7.2%",
+      icon: <Users className="w-5 h-5 text-yellow-400" />,
+      iconBg: "bg-yellow-900/20",
+      valueColor: "text-yellow-400",
+    },
+    {
+      title: "Products",
+      value: `${summary.products}k`,
+      growth: "8%",
+      icon: <Package className="w-5 h-5 text-green-400" />,
+      iconBg: "bg-green-900/20",
+      valueColor: "text-green-400",
+    },
+    {
+      title: "Revenue",
+      value: `$${summary.revenue}k`,
+      growth: "3.69%",
+      icon: <DollarSign className="w-5 h-5 text-pink-400" />,
+      iconBg: "bg-pink-900/20",
+      valueColor: "text-pink-400",
+    },
+  ];
+
   return (
-    <div className="flex-1 px-4 overflow-x-hidden">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card
-          title="Sales"
-          value={`${summary.sales}k`}
-          growth="4.3%"
-          icon={<Presentation className="w-5 h-5 text-blue-400" />}
-          iconBg="bg-blue-900/20"
-          valueColor="text-blue-400"
-          cardHeight="h-32"
-        />
-        <Card
-          title="Customers"
-          value={`${summary.customers}k`}
-          growth="7.2%"
-          icon={<Users className="w-5 h-5 text-yellow-400" />}
-          iconBg="bg-yellow-900/20"
-          valueColor="text-yellow-400"
-          cardHeight="h-32"
-        />
-        <Card
-          title="Products"
-          value={`${summary.products}k`}
-          growth="8%"
-          icon={<Package className="w-5 h-5 text-green-400" />}
-          iconBg="bg-green-900/20"
-          valueColor="text-green-400"
-          cardHeight="h-32"
-        />
-        <Card
-          title="Revenue"
-          value={`$${summary.revenue}k`}
-          growth="3.69%"
-          icon={<DollarSign className="w-5 h-5 text-pink-400" />}
-          iconBg="bg-pink-900/20"
-          valueColor="text-pink-400"
-          cardHeight="h-32"
-        />
+    <div className="w-full px-7">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        {cards.map((card, index) => (
+          <Card key={index} {...card} />
+        ))}
       </div>
     </div>
   );
 }
 
-function Card({ title, value, growth, icon, iconBg, valueColor, cardHeight = "h-32" }) {
+function Card({ title, value, growth, icon, iconBg, valueColor }) {
   return (
-    <div
-      className={`bg-zinc-900 rounded-lg shadow-sm border border-zinc-700 
-                  flex flex-col justify-between 
-                  ${cardHeight} overflow-y-auto p-4`}
-    >
-      <div className="flex justify-between items-center mb-1">
-        <h3 className="text-gray-400 text-lg font-medium">{title}</h3>
-        <div className={`${iconBg} p-1.5 rounded-md`}>
+    <div className="bg-zinc-900 rounded-xl shadow border border-zinc-700 flex flex-col justify-between h-full p-4">
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="text-gray-400 text-base md:text-lg font-medium">{title}</h3>
+        <div className={`${iconBg} p-2 rounded-md`}>
           {icon}
         </div>
       </div>
 
-      <div className={`${valueColor} text-2xl font-semibold mb-1`}>
+      <div className={`${valueColor} text-2xl md:text-3xl font-bold mb-2`}>
         {value}
       </div>
 
-      <div className="flex items-center text-green-500 text-xs">
-        <ArrowUp className="w-3 h-3 mr-1" />
+      <div className="flex items-center text-green-500 text-sm">
+        <ArrowUp className="w-4 h-4 mr-1" />
         <span>{growth}</span>
       </div>
     </div>
   );
 }
-

@@ -1,33 +1,23 @@
 "use client";
 
-import SalesReport from "../salesReport/SalesReport";
-import EarningStats from "../earning/EarningStats";
-import Order from "../order/Order";
+import SalesReport from "../../components/salesReport/SalesReport"
+import EarningAndClosedOrders from "../../components/earning/EarningStats"; 
+import Order from "../../components/order/Order"
 
-export default function SalesSummary() {
+export default function DashboardCards() {
   return (
-    <div className="w-full flex flex-col md:flex-row gap-4 items-stretch px-4">
-      {/* Left: Sales Report (stacked on mobile, 70% on md+) */}
-      <div className="w-full md:w-[70%]">
-        <SalesReport cardHeight="h-[350px]" />
+    <div className="flex flex-col lg:flex-row gap-6 w-full px-8 py-4 mx-auto">
+      {/* Left: Sales Report */}
+      <div className="lg:w-4/6 w-full">
+        <SalesReport />
       </div>
 
-      {/* Right: EarningStats + Order (stacked on mobile, side by side on md+) */}
-      <div className="w-full md:w-[30%] flex flex-col gap-4">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="w-full md:w-1/2">
-            <EarningStats
-              closedOrderCardHeight="h-[85px]"
-              earningCardHeight="h-[250px]"
-            />
-          </div>
-          <div className="w-full md:w-1/2">
-            <Order
-              ratingCardHeight="h-[85px]"
-              ordersCardHeight="h-[250px]"
-            />
-          </div>
-        </div>
+      {/* Right: Earnings + Closed Orders */}
+      <div className="lg:w-1/6 w-full">
+        <EarningAndClosedOrders />
+      </div>
+        <div className="lg:w-1/6 w-full">
+        <Order/>
       </div>
     </div>
   );

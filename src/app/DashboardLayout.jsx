@@ -13,20 +13,17 @@ const DashboardLayout = ({ children }) => {
   };
 
   return (
-    <div className="relative flex w-full h-screen overflow-hidden bg-gray-100">
-      {/* SidebarCollapsed (always on desktop) */}
-      <div className="hidden sm:flex fixed top-0 left-0 w-20 h-full z-50 bg-gray-900">
+    <div className="relative flex w-full h-screen overflow-hidden bg-zinc-800">
+      {/* SidebarCollapsed - only visible on lg+ screens */}
+      <div className="hidden lg:flex fixed top-0 left-0 w-20 h-full z-40 bg-gray-900">
         <SidebarCollapsed />
       </div>
 
-      {/* SidebarExpanded (slides beside collapsed) */}
+      {/* SidebarExpanded - toggled via navbar */}
       {isSidebarExpanded && (
         <div
-          className={`
-            fixed top-0 h-full z-50 bg-zinc-900 transition-all duration-300
-            ${isSidebarExpanded ? "w-64" : "w-0 overflow-hidden"}
-            ${isSidebarExpanded ? "left-0 sm:left-20" : "left-0 sm:left-20"}
-          `}
+          className="fixed top-0 h-full z-50 w-64 bg-zinc-900 transition-transform duration-300
+                     lg:left-20 left-0"
         >
           <SidebarExpanded onClose={toggleSidebar} />
         </div>
@@ -35,7 +32,7 @@ const DashboardLayout = ({ children }) => {
       {/* Main Content */}
       <div
         className={`flex flex-col flex-1 h-full w-full transition-all duration-300 ${
-          isSidebarExpanded ? "ml-0 sm:ml-[20rem]" : "ml-0 sm:ml-20"
+          isSidebarExpanded ? "lg:ml-[20rem]" : "lg:ml-20"
         }`}
       >
         <Navbar onToggleSidebar={toggleSidebar} />
@@ -46,4 +43,9 @@ const DashboardLayout = ({ children }) => {
 };
 
 export default DashboardLayout;
+
+
+
+
+
 
