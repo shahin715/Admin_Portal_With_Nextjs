@@ -18,6 +18,7 @@ export default function ProductTable() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState(null);
+  const [error, setError] = useState(null); // Added for error handling
   const itemsPerPage = 10;
 
   const fetchProducts = async () => {
@@ -26,16 +27,25 @@ export default function ProductTable() {
       const storedProducts = JSON.parse(localStorage.getItem("products"));
       if (storedProducts && storedProducts.length > 0) {
         setProducts(storedProducts);
-      } else {
-        // Fallback to db.json if localStorage is empty
-        const response = await fetch("/db.json");
-        const data = await response.json();
-        setProducts(data.products);
-        // Optionally initialize localStorage with db.json data
-        localStorage.setItem("products", JSON.stringify(data.products));
+        return;
       }
+      // Fallback to db.json if localStorage is empty
+      const response = await fetch("/db.json", {
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch db.json: ${response.status}`);
+      }
+      const data = await response.json();
+      setProducts(data.products || []);
+      localStorage.setItem("products", JSON.stringify(data.products || [])); // Initialize localStorage
     } catch (err) {
       console.error("Error fetching data:", err);
+      setError(err.message); // Display error in UI
+      setProducts([]); // Fallback to empty array
     }
   };
 
@@ -56,6 +66,7 @@ export default function ProductTable() {
       localStorage.setItem("products", JSON.stringify(updatedProducts));
     } catch (err) {
       console.error("Delete Error:", err);
+      setError(err.message);
     }
   };
 
@@ -98,6 +109,11 @@ export default function ProductTable() {
   return (
     <div className="w-full p-0 bg-zinc-800 text-gray-100 px-8 pt-1">
       <div className="w-full overflow-x-auto">
+        {error && (
+          <div className="p-4 bg-red-600 text-white rounded-md mb-4">
+            {error}
+          </div>
+        )}
         <div className="flex items-center justify-between p-4 border border-zinc-700 bg-zinc-900 rounded-xl mb-4">
           <h1 className="text-lg font-semibold">Products Table</h1>
           <div className="flex items-center space-x-2">
