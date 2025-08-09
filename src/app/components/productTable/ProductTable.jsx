@@ -29,7 +29,7 @@ export default function ProductTable() {
         setProducts(storedProducts);
         return;
       }
-      // Fallback to db.json if localStorage is empty
+      // Fallback to db.json
       const response = await fetch("/db.json", {
         headers: {
           "Content-Type": "application/json",
@@ -40,12 +40,15 @@ export default function ProductTable() {
         throw new Error(`Failed to fetch db.json: ${response.status}`);
       }
       const data = await response.json();
-      setProducts(data.products || []);
-      localStorage.setItem("products", JSON.stringify(data.products || [])); // Initialize localStorage
+      if (!data.products) {
+        throw new Error("No 'products' key found in db.json");
+      }
+      setProducts(data.products);
+      localStorage.setItem("products", JSON.stringify(data.products));
     } catch (err) {
       console.error("Error fetching data:", err);
-      setError(err.message); // Display error in UI
-      setProducts([]); // Fallback to empty array
+      setError(err.message);
+      setProducts([]);
     }
   };
 
@@ -136,7 +139,7 @@ export default function ProductTable() {
                   onClose={() => {
                     setIsDialogOpen(false);
                     setProductToEdit(null);
-                    fetchProducts(); // Refresh product list after adding/updating
+                    fetchProducts();
                   }}
                 />
               </DialogContent>
