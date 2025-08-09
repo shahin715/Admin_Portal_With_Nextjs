@@ -11,15 +11,11 @@ export default function SummaryCards() {
   });
 
 useEffect(() => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/summary`;
-
-  console.log("API URL: ", apiUrl); // Log the URL being requested
-  axios
-    .get(apiUrl)
-    .then(res => setSummary(res.data[0]))
-    .catch(err => console.error("API fetch error", err));
+  fetch("/db.json")  // Static path to the public folder
+    .then((res) => res.json())
+    .then((data) => setSummary(data.summary[0])) // Accessing data from the JSON file
+    .catch((err) => console.error("API fetch error", err));
 }, []);
-
 
   const cards = [
     {
