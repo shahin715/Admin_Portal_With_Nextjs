@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import { ArrowUp, Presentation, Users, Package, DollarSign } from "lucide-react";
 import axios from "axios";
@@ -12,12 +10,15 @@ export default function SummaryCards() {
     revenue: 0,
   });
 
-  useEffect(() => {
-    axios
-      .get("http://localhost:5001/summary")
-      .then(res => setSummary(res.data[0]))
-      .catch(err => console.error("API fetch error", err));
-  }, []);
+useEffect(() => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/summary`;
+  console.log("API URL: ", apiUrl); // Log the URL being requested
+  axios
+    .get(apiUrl)
+    .then(res => setSummary(res.data[0]))
+    .catch(err => console.error("API fetch error", err));
+}, []);
+
 
   const cards = [
     {
