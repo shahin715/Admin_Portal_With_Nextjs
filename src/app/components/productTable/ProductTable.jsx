@@ -20,15 +20,20 @@ export default function ProductTable() {
   const [productToEdit, setProductToEdit] = useState(null);
   const itemsPerPage = 10;
 
-  const fetchProducts = () => {
-    // Fetch products from localStorage
-    const productsData = JSON.parse(localStorage.getItem("products")) || [];
-    setProducts(productsData);  // Set products state
+  const fetchProducts = async () => {
+    try {
+      // Fetch from the public folder where db.json is now stored
+      const response = await fetch("/db.json");
+      const data = await response.json();
+      setProducts(data.products);  // Access the products from db.json
+    } catch (err) {
+      console.error("Error fetching data:", err);
+    }
   };
 
   useEffect(() => {
     fetchProducts();
-  }, []);  // Make sure this runs once when the component mounts
+  }, []); 
 
   const handleSort = (field) => {
     const order = sortField === field && sortOrder === "asc" ? "desc" : "asc";
@@ -38,10 +43,10 @@ export default function ProductTable() {
 
   const handleDelete = async (id) => {
     try {
-      // Remove product from the list
       const updatedProducts = products.filter((product) => product.id !== id);
-      localStorage.setItem("products", JSON.stringify(updatedProducts)); // Update localStorage
-      setProducts(updatedProducts); // Update state to trigger re-render
+      setProducts(updatedProducts);
+      // Update the localStorage as well
+      localStorage.setItem("products", JSON.stringify(updatedProducts)); 
     } catch (err) {
       console.error("Delete Error:", err);
     }
@@ -108,7 +113,7 @@ export default function ProductTable() {
                   onClose={() => {
                     setIsDialogOpen(false);
                     setProductToEdit(null);
-                    fetchProducts();  // Re-fetch products to update the list
+                    fetchProducts();  // Refresh product list after adding/updating
                   }}
                 />
               </DialogContent>
@@ -231,3 +236,4 @@ export default function ProductTable() {
     </div>
   );
 }
+
