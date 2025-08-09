@@ -19,116 +19,31 @@ export default function ProductTable() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState(null);
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true);
   const itemsPerPage = 10;
 
   const fetchProducts = async () => {
-    setLoading(true);
     try {
       // Check localStorage first
-      const storedProducts = localStorage.getItem("products");
-      if (storedProducts) {
-        const parsedProducts = JSON.parse(storedProducts);
-        if (parsedProducts && parsedProducts.length > 0) {
-          setProducts(parsedProducts);
-          setLoading(false);
-          return;
-        }
+      const storedProducts = JSON.parse(localStorage.getItem("products") || "[]");
+      if (storedProducts.length > 0) {
+        setProducts(storedProducts);
+        return;
       }
-
-      // Multiple fallback approaches for production
-      let data = null;
-      
-      // Method 1: Try the original path
-      try {
-        const response = await fetch("/db.json", {
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          cache: 'no-cache' // Prevent caching issues
-        });
-        
-        if (response.ok) {
-          data = await response.json();
-        }
-      } catch (err) {
-        console.warn("Method 1 failed:", err.message);
+      // Fallback to db.json, mimicking SalesReport's fetch
+      const response = await fetch("/db.json");
+      if (!response.ok) {
+        throw new Error(`Failed to fetch db.json: ${response.status}`);
       }
-
-      // Method 2: Try with absolute URL (for Vercel)
-      if (!data) {
-        try {
-          const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-          const response = await fetch(`${baseUrl}/db.json`, {
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
-            cache: 'no-cache'
-          });
-          
-          if (response.ok) {
-            data = await response.json();
-          }
-        } catch (err) {
-          console.warn("Method 2 failed:", err.message);
-        }
+      const data = await response.json();
+      if (!data.products) {
+        throw new Error("No 'products' key found in db.json");
       }
-
-      // Method 3: Fallback to hardcoded data or API route
-      if (!data) {
-        try {
-          // Try API route if you create one
-          const response = await fetch("/api/products", {
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
-          });
-          
-          if (response.ok) {
-            data = await response.json();
-          }
-        } catch (err) {
-          console.warn("Method 3 failed:", err.message);
-          
-          // Ultimate fallback - sample data
-          data = {
-            products: [
-              {
-                id: 1,
-                name: "Sample Product",
-                brandName: "Sample Brand",
-                category: "Sample Category",
-                price: "99.99",
-                stockQuantity: "10",
-                stockStatus: "Available",
-                views: "100",
-                viewsChange: "5%",
-                viewsChangeType: "increase",
-                productCode: "SP001",
-                brandColor: "#3B82F6"
-              }
-            ]
-          };
-        }
-      }
-
-      if (!data || !data.products) {
-        throw new Error("No product data found");
-      }
-
       setProducts(data.products);
       localStorage.setItem("products", JSON.stringify(data.products));
-      setError(null);
-      
     } catch (err) {
       console.error("Error fetching data:", err);
-      setError(`Failed to load products: ${err.message}`);
+      setError(err.message);
       setProducts([]);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -142,7 +57,7 @@ export default function ProductTable() {
     setSortOrder(order);
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = (id) => {
     try {
       const updatedProducts = products.filter((product) => product.id !== id);
       setProducts(updatedProducts);
@@ -154,9 +69,9 @@ export default function ProductTable() {
   };
 
   const filteredProducts = products.filter((product) =>
-    product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.brandName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.category?.toLowerCase().includes(searchTerm.toLowerCase())
+    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.brandName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const sortedProducts = filteredProducts.sort((a, b) => {
@@ -189,28 +104,12 @@ export default function ProductTable() {
     return sortOrder === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />;
   };
 
-  if (loading) {
-    return (
-      <div className="w-full p-0 bg-zinc-800 text-gray-100 px-8 pt-1">
-        <div className="flex items-center justify-center p-8">
-          <div className="text-lg">Loading products...</div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="w-full p-0 bg-zinc-800 text-gray-100 px-8 pt-1">
       <div className="w-full overflow-x-auto">
         {error && (
           <div className="p-4 bg-red-600 text-white rounded-md mb-4">
             {error}
-            <button 
-              onClick={fetchProducts} 
-              className="ml-4 px-3 py-1 bg-red-700 hover:bg-red-800 rounded text-sm"
-            >
-              Retry
-            </button>
           </div>
         )}
         <div className="flex items-center justify-between p-4 border border-zinc-700 bg-zinc-900 rounded-xl mb-4">
@@ -278,7 +177,7 @@ export default function ProductTable() {
                     {product.brandName}
                   </div>
                 </TableCell>
-                <TableCell>${parseFloat(product.price || 0).toFixed(2)}</TableCell>
+                <TableCell>${parseFloat(product.price).toFixed(2)}</TableCell>
                 <TableCell>
                   <div className={`font-medium ${
                     product.stockStatus === "Available"
@@ -326,12 +225,6 @@ export default function ProductTable() {
             ))}
           </TableBody>
         </Table>
-
-        {currentProducts.length === 0 && !loading && (
-          <div className="text-center py-8 text-gray-400">
-            No products found
-          </div>
-        )}
 
         <div className="flex items-center justify-between p-4 border border-zinc-700 bg-zinc-900 rounded-xl mt-4">
           <Pagination>
