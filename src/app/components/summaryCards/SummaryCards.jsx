@@ -12,6 +12,7 @@ export default function SummaryCards() {
 
 useEffect(() => {
   const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/summary`;
+
   console.log("API URL: ", apiUrl); // Log the URL being requested
   axios
     .get(apiUrl)
