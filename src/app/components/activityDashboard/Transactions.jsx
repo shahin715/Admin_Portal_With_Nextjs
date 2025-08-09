@@ -6,9 +6,10 @@ export default function Transactions() {
   const [transactions, setTransactions] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:5001/transactions")
+   
+    fetch("/db.json")
       .then((res) => res.json())
-      .then((data) => setTransactions(data))
+      .then((data) => setTransactions(data.transactions)) 
       .catch((err) => console.error("Failed to fetch:", err));
   }, []);
 
@@ -45,4 +46,3 @@ export default function Transactions() {
     </div>
   );
 }
-

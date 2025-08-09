@@ -10,7 +10,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { useEffect, useState } from "react";
-import axios from "axios";
+import axios from "axios"; 
 
 export default function SalesReport() {
   const [filter, setFilter] = useState("daily");
@@ -19,15 +19,23 @@ export default function SalesReport() {
   useEffect(() => {
     const fetchSalesData = async () => {
       try {
-        const res = await axios.get("http://localhost:5001/salesReport");
-        const salesData = res.data[filter].map((item) => ({
-          date: item.date,
-          sales: item.value1,
-          visits: item.value2,
-        }));
-        setData(salesData);
+       
+        const res = await fetch("/db.json"); 
+        const salesReport = await res.json();
+
+        
+        if (salesReport.salesReport[filter]) {
+          const salesData = salesReport.salesReport[filter].map((item) => ({
+            date: item.date,
+            sales: item.value1,
+            visits: item.value2,
+          }));
+          setData(salesData);
+        } else {
+          console.error(`Filter '${filter}' not found in the data.`);
+        }
       } catch (error) {
-        console.error("Error fetching data", error);
+        console.error("Error fetching data:", error);
       }
     };
 

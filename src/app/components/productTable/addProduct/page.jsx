@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 
 export default function AddProductForm({ onClose, productToEdit }) {
   const [formData, setFormData] = useState({
@@ -10,48 +10,46 @@ export default function AddProductForm({ onClose, productToEdit }) {
     category: "",
     price: "",
     stockQuantity: "",
-    stockStatus: "Available",
+    stockStatus: "Available",  
     views: "0",
     viewsChange: "0%",
     viewsChangeType: "increase",
-  })
+  });
 
-  // Fill form if editing
   useEffect(() => {
     if (productToEdit) {
-      setFormData(productToEdit)
+      setFormData(productToEdit);
     }
-  }, [productToEdit])
+  }, [productToEdit]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
-  }
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
     try {
+      const productsData = JSON.parse(localStorage.getItem("products")) || [];
+
+      let updatedProducts = [...productsData];
+
       if (productToEdit?.id) {
-        // 🔄 Update product
-        await fetch(`http://localhost:5001/products/${productToEdit.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        })
+        updatedProducts = updatedProducts.map((product) =>
+          product.id === productToEdit.id ? { ...product, ...formData } : product
+        );
       } else {
-        // ➕ Add new product
-        await fetch("http://localhost:5001/products", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        })
+        const newProduct = { ...formData, id: Date.now().toString() };
+        updatedProducts.push(newProduct);
       }
 
-      onClose()
+      localStorage.setItem("products", JSON.stringify(updatedProducts));
+
+      onClose();
     } catch (err) {
-      console.error("Error submitting form:", err)
+      console.error("Error submitting form:", err);
     }
-  }
+  };
 
   return (
     <div className="text-white">
@@ -71,12 +69,24 @@ export default function AddProductForm({ onClose, productToEdit }) {
             className="w-full p-2 rounded bg-zinc-800 border border-zinc-700"
           />
         ))}
+
+        {/* Dropdown for Stock Status */}
+        <select
+          name="stockStatus"
+          value={formData.stockStatus}
+          onChange={handleChange}
+          required
+          className="w-full p-2 rounded bg-zinc-800 border border-zinc-700"
+        >
+          <option value="Available">Available</option>
+          <option value="Limited Supply">Limited Supply</option>
+          <option value="Not Available">Not Available</option>
+        </select>
+
         <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
           {productToEdit ? "Update Product" : "Submit Product"}
         </Button>
       </form>
     </div>
-  )
+  );
 }
-
-

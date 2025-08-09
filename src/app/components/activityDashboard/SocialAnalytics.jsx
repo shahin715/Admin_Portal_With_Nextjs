@@ -1,18 +1,9 @@
 "use client";
 
-import {
-  Instagram,
-  Facebook,
-  Twitter,
-  Youtube,
-  Video,
-  Heart,
-  MessageCircle,
-} from "lucide-react";
-
+import { Instagram, Facebook, Twitter, Youtube, Video, Heart, MessageCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 
-// Icon map (with alias handling for API icon names)
+
 const ICON_MAP = {
   Instagram: <Instagram className="text-pink-500 w-5 h-5" />,
   Facebook: <Facebook className="text-blue-500 w-5 h-5" />,
@@ -28,15 +19,14 @@ export default function SocialAnalytics() {
   const [countryItems, setCountryItems] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:5001/socialItems")
+   
+    fetch("/db.json")
       .then((res) => res.json())
-      .then((data) => setSocialItems(data))
-      .catch((err) => console.error("Failed to fetch socialItems:", err));
-
-    fetch("http://localhost:5001/countryItems")
-      .then((res) => res.json())
-      .then((data) => setCountryItems(data))
-      .catch((err) => console.error("Failed to fetch countryItems:", err));
+      .then((data) => {
+        setSocialItems(data.socialItems); 
+        setCountryItems(data.countryItems);
+      })
+      .catch((err) => console.error("Failed to fetch data from db.json:", err));
   }, []);
 
   return (
@@ -55,14 +45,9 @@ export default function SocialAnalytics() {
 
         <ul className="space-y-3">
           {socialItems.map((item) => (
-            <li
-              key={item.id}
-              className="flex items-center justify-between text-sm"
-            >
+            <li key={item.id} className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2">
-                {ICON_MAP[item.icon] || (
-                  <Video className="text-white w-5 h-5" />
-                )}
+                {ICON_MAP[item.icon] || <Video className="text-white w-5 h-5" />}
                 <span>{item.name}</span>
               </div>
               <div className="flex items-center gap-6 text-gray-300">
@@ -112,5 +97,3 @@ export default function SocialAnalytics() {
     </div>
   );
 }
-
-

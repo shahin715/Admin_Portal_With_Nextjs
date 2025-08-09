@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import axios from "axios";
-
+import { useState, useEffect } from "react";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -10,7 +8,6 @@ import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
 import { Search, MoreHorizontal, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
-
 import AddProductForm from "./addProduct/page";
 
 export default function ProductTable() {
@@ -24,15 +21,14 @@ export default function ProductTable() {
   const itemsPerPage = 10;
 
   const fetchProducts = () => {
-    axios
-      .get("http://localhost:5001/products")
-      .then((res) => setProducts(res.data))
-      .catch((err) => console.error("API Error:", err));
+    
+    const productsData = JSON.parse(localStorage.getItem("products")) || [];
+    setProducts(productsData);  
   };
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, []); 
 
   const handleSort = (field) => {
     const order = sortField === field && sortOrder === "asc" ? "desc" : "asc";
@@ -42,8 +38,10 @@ export default function ProductTable() {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`http://localhost:5001/products/${id}`);
-      fetchProducts();
+     
+      const updatedProducts = products.filter((product) => product.id !== id);
+      localStorage.setItem("products", JSON.stringify(updatedProducts)); 
+      setProducts(updatedProducts);  
     } catch (err) {
       console.error("Delete Error:", err);
     }
@@ -110,7 +108,7 @@ export default function ProductTable() {
                   onClose={() => {
                     setIsDialogOpen(false);
                     setProductToEdit(null);
-                    fetchProducts();
+                    fetchProducts();  
                   }}
                 />
               </DialogContent>

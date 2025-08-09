@@ -11,9 +11,9 @@ export default function SummaryCards() {
   });
 
 useEffect(() => {
-  fetch("/db.json")  // Static path to the public folder
+  fetch("/db.json")  
     .then((res) => res.json())
-    .then((data) => setSummary(data.summary[0])) // Accessing data from the JSON file
+    .then((data) => setSummary(data.summary[0])) 
     .catch((err) => console.error("API fetch error", err));
 }, []);
 
