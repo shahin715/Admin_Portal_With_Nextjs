@@ -21,14 +21,14 @@ export default function ProductTable() {
   const itemsPerPage = 10;
 
   const fetchProducts = () => {
-    
+    // Fetch products from localStorage
     const productsData = JSON.parse(localStorage.getItem("products")) || [];
-    setProducts(productsData);  
+    setProducts(productsData);  // Set products state
   };
 
   useEffect(() => {
     fetchProducts();
-  }, []); 
+  }, []);  // Make sure this runs once when the component mounts
 
   const handleSort = (field) => {
     const order = sortField === field && sortOrder === "asc" ? "desc" : "asc";
@@ -38,10 +38,10 @@ export default function ProductTable() {
 
   const handleDelete = async (id) => {
     try {
-     
+      // Remove product from the list
       const updatedProducts = products.filter((product) => product.id !== id);
-      localStorage.setItem("products", JSON.stringify(updatedProducts)); 
-      setProducts(updatedProducts);  
+      localStorage.setItem("products", JSON.stringify(updatedProducts)); // Update localStorage
+      setProducts(updatedProducts); // Update state to trigger re-render
     } catch (err) {
       console.error("Delete Error:", err);
     }
@@ -108,7 +108,7 @@ export default function ProductTable() {
                   onClose={() => {
                     setIsDialogOpen(false);
                     setProductToEdit(null);
-                    fetchProducts();  
+                    fetchProducts();  // Re-fetch products to update the list
                   }}
                 />
               </DialogContent>
