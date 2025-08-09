@@ -22,10 +22,18 @@ export default function ProductTable() {
 
   const fetchProducts = async () => {
     try {
-      // Fetch from the public folder where db.json is now stored
-      const response = await fetch("/db.json");
-      const data = await response.json();
-      setProducts(data.products);  // Access the products from db.json
+      // Check localStorage first
+      const storedProducts = JSON.parse(localStorage.getItem("products"));
+      if (storedProducts && storedProducts.length > 0) {
+        setProducts(storedProducts);
+      } else {
+        // Fallback to db.json if localStorage is empty
+        const response = await fetch("/db.json");
+        const data = await response.json();
+        setProducts(data.products);
+        // Optionally initialize localStorage with db.json data
+        localStorage.setItem("products", JSON.stringify(data.products));
+      }
     } catch (err) {
       console.error("Error fetching data:", err);
     }
@@ -33,7 +41,7 @@ export default function ProductTable() {
 
   useEffect(() => {
     fetchProducts();
-  }, []); 
+  }, []);
 
   const handleSort = (field) => {
     const order = sortField === field && sortOrder === "asc" ? "desc" : "asc";
@@ -45,8 +53,7 @@ export default function ProductTable() {
     try {
       const updatedProducts = products.filter((product) => product.id !== id);
       setProducts(updatedProducts);
-      // Update the localStorage as well
-      localStorage.setItem("products", JSON.stringify(updatedProducts)); 
+      localStorage.setItem("products", JSON.stringify(updatedProducts));
     } catch (err) {
       console.error("Delete Error:", err);
     }
@@ -113,7 +120,7 @@ export default function ProductTable() {
                   onClose={() => {
                     setIsDialogOpen(false);
                     setProductToEdit(null);
-                    fetchProducts();  // Refresh product list after adding/updating
+                    fetchProducts(); // Refresh product list after adding/updating
                   }}
                 />
               </DialogContent>
@@ -236,4 +243,3 @@ export default function ProductTable() {
     </div>
   );
 }
-
