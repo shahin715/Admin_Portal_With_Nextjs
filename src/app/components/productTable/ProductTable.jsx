@@ -30,7 +30,7 @@ export default function ProductTable() {
       } catch (err) {
         console.warn("Invalid localStorage data, resetting to empty array:", err);
         storedProducts = [];
-        localStorage.setItem("products", "[]");
+        localStorage.setItem("products", JSON.stringify([]));
       }
       if (storedProducts.length > 0) {
         console.log("Loaded from localStorage:", storedProducts);
@@ -44,10 +44,11 @@ export default function ProductTable() {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       const data = await response.json();
+      console.log("Raw db.json data:", data);
       if (!data.products || !Array.isArray(data.products)) {
         throw new Error("Invalid or missing 'products' key in db.json");
       }
-      console.log("Loaded from db.json:", data.products);
+      console.log("Loaded products from db.json:", data.products);
       setProducts(data.products);
       localStorage.setItem("products", JSON.stringify(data.products));
     } catch (err) {
@@ -86,8 +87,8 @@ export default function ProductTable() {
   );
 
   const sortedProducts = filteredProducts.sort((a, b) => {
-    let aVal = a[sortField];
-    let bVal = b[sortField];
+    let aVal = a[sortField] || "";
+    let bVal = b[sortField] || "";
 
     if (sortField === "price" || sortField === "views") {
       aVal = parseFloat(aVal) || 0;
@@ -121,6 +122,11 @@ export default function ProductTable() {
         {error && (
           <div className="p-4 bg-red-600 text-white rounded-md mb-4">
             {error}
+          </div>
+        )}
+        {products.length === 0 && !error && (
+          <div className="p-4 bg-yellow-600 text-white rounded-md mb-4">
+            No products available. Add a product to get started.
           </div>
         )}
         <div className="flex items-center justify-between p-4 border border-zinc-700 bg-zinc-900 rounded-xl mb-4">
