@@ -24,13 +24,21 @@ export default function ProductTable() {
   const fetchProducts = async () => {
     try {
       // Check localStorage first
-      const storedProducts = JSON.parse(localStorage.getItem("products") || "[]");
+      let storedProducts;
+      try {
+        storedProducts = JSON.parse(localStorage.getItem("products") || "[]");
+      } catch (err) {
+        console.warn("Invalid localStorage data, resetting to empty array:", err);
+        storedProducts = [];
+        localStorage.setItem("products", "[]");
+      }
       if (storedProducts.length > 0) {
+        console.log("Loaded from localStorage:", storedProducts);
         setProducts(storedProducts);
-        console.log("Loaded products from localStorage:", storedProducts);
         return;
       }
-      // Fetch db.json, matching SalesReport's approach
+      // Fetch db.json, matching SalesReport
+      console.log("Fetching /db.json...");
       const response = await fetch("/db.json");
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
@@ -39,9 +47,9 @@ export default function ProductTable() {
       if (!data.products || !Array.isArray(data.products)) {
         throw new Error("Invalid or missing 'products' key in db.json");
       }
+      console.log("Loaded from db.json:", data.products);
       setProducts(data.products);
       localStorage.setItem("products", JSON.stringify(data.products));
-      console.log("Loaded products from db.json:", data.products);
     } catch (err) {
       console.error("Error fetching products:", err);
       setError(`Failed to load products: ${err.message}`);
