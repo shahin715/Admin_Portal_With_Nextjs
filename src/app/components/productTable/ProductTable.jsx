@@ -27,22 +27,24 @@ export default function ProductTable() {
       const storedProducts = JSON.parse(localStorage.getItem("products") || "[]");
       if (storedProducts.length > 0) {
         setProducts(storedProducts);
+        console.log("Loaded products from localStorage:", storedProducts);
         return;
       }
-      // Fallback to db.json, mimicking SalesReport's fetch
+      // Fetch db.json, matching SalesReport's approach
       const response = await fetch("/db.json");
       if (!response.ok) {
-        throw new Error(`Failed to fetch db.json: ${response.status}`);
+        throw new Error(`HTTP error! Status: ${response.status}`);
       }
       const data = await response.json();
-      if (!data.products) {
-        throw new Error("No 'products' key found in db.json");
+      if (!data.products || !Array.isArray(data.products)) {
+        throw new Error("Invalid or missing 'products' key in db.json");
       }
       setProducts(data.products);
       localStorage.setItem("products", JSON.stringify(data.products));
+      console.log("Loaded products from db.json:", data.products);
     } catch (err) {
-      console.error("Error fetching data:", err);
-      setError(err.message);
+      console.error("Error fetching products:", err);
+      setError(`Failed to load products: ${err.message}`);
       setProducts([]);
     }
   };
@@ -62,16 +64,17 @@ export default function ProductTable() {
       const updatedProducts = products.filter((product) => product.id !== id);
       setProducts(updatedProducts);
       localStorage.setItem("products", JSON.stringify(updatedProducts));
+      console.log("Deleted product with id:", id);
     } catch (err) {
-      console.error("Delete Error:", err);
-      setError(err.message);
+      console.error("Error deleting product:", err);
+      setError(`Failed to delete product: ${err.message}`);
     }
   };
 
   const filteredProducts = products.filter((product) =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.brandName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.category.toLowerCase().includes(searchTerm.toLowerCase())
+    product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.brandName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.category?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const sortedProducts = filteredProducts.sort((a, b) => {
@@ -79,8 +82,8 @@ export default function ProductTable() {
     let bVal = b[sortField];
 
     if (sortField === "price" || sortField === "views") {
-      aVal = parseFloat(aVal);
-      bVal = parseFloat(bVal);
+      aVal = parseFloat(aVal) || 0;
+      bVal = parseFloat(bVal) || 0;
     }
 
     if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
@@ -163,21 +166,21 @@ export default function ProductTable() {
                 <TableCell className="py-3">
                   <div className="flex items-center">
                     <div className="h-10 w-10 rounded-lg bg-gray-300 flex items-center justify-center text-black font-semibold uppercase">
-                      {product.name?.slice(0, 2)}
+                      {product.name?.slice(0, 2) || "--"}
                     </div>
                     <div className="ml-4">
-                      <div className="text-sm font-medium text-white">{product.name}</div>
+                      <div className="text-sm font-medium text-white">{product.name || "N/A"}</div>
                       <div className="text-xs text-gray-400">{product.productCode || "—"}</div>
                     </div>
                   </div>
                 </TableCell>
-                <TableCell>{product.category}</TableCell>
+                <TableCell>{product.category || "N/A"}</TableCell>
                 <TableCell>
                   <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium" style={{ backgroundColor: product.brandColor || "#6B7280", color: "white" }}>
-                    {product.brandName}
+                    {product.brandName || "N/A"}
                   </div>
                 </TableCell>
-                <TableCell>${parseFloat(product.price).toFixed(2)}</TableCell>
+                <TableCell>${parseFloat(product.price || 0).toFixed(2)}</TableCell>
                 <TableCell>
                   <div className={`font-medium ${
                     product.stockStatus === "Available"
@@ -186,12 +189,12 @@ export default function ProductTable() {
                       ? "text-yellow-400"
                       : "text-red-500"
                   }`}>
-                    {product.stockStatus}
+                    {product.stockStatus || "N/A"}
                   </div>
-                  <div className="text-xs text-gray-400">{product.stockQuantity}</div>
+                  <div className="text-xs text-gray-400">{product.stockQuantity || 0}</div>
                 </TableCell>
                 <TableCell>
-                  <div>{product.views}</div>
+                  <div>{product.views || 0}</div>
                   <div className={`flex items-center text-xs ${
                     product.viewsChangeType === "increase"
                       ? "text-green-400"
@@ -202,7 +205,7 @@ export default function ProductTable() {
                     ) : (
                       <ArrowDown className="h-3 w-3 mr-1" />
                     )}
-                    {product.viewsChange}
+                    {product.viewsChange || "0%"}
                   </div>
                 </TableCell>
                 <TableCell className="text-right px-4">
