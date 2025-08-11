@@ -631,7 +631,7 @@
       "status": "Active",
       "stock": 42,
       "description": "Stylish black/white sneakers for casual wear.",
-      "image": ""
+      "image": "/Sneakers.webp"
     },
     {
       "id": "P-0002",
@@ -643,7 +643,7 @@
       "status": "Active",
       "stock": 120,
       "description": "Soft cotton tee with classic fit.",
-      "image": ""
+      "image": "/T‑Shirt.jpg"
     },
     {
       "id": "P-0003",
@@ -655,7 +655,7 @@
       "status": "Active",
       "stock": 80,
       "description": "2.4Ghz ergonomic mouse with silent clicks.",
-      "image": ""
+      "image": "/Wireless Mouse.webp"
     },
     {
       "id": "P-0004",
@@ -679,7 +679,7 @@
       "status": "Active",
       "stock": 55,
       "description": "Dishwasher‑safe 350ml ceramic mug.",
-      "image": ""
+      "image": "/USB‑C Cable 1m.jpg"
     },
     {
       "id": "P-0006",
