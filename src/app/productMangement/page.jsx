@@ -5,6 +5,9 @@ import SidebarCollapsed from "../components/sidebar/SidebarCollapsed";
 import SidebarExpanded from "../components/sidebar/SidebarExpanded";
 import Navbar from "../components/navbar/Navbar";
 
+// Optional: Import db.json statically (uncomment and adjust path if using this approach)
+// import dbJson from '../../public/db.json';
+
 // ==== API base (optional) ====
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim();
 
@@ -12,38 +15,48 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim();
 function parsePrice(v) {
   if (typeof v === "number") return v;
   if (v == null) return 0;
-  const n = parseFloat(String(v).replace(/[^0-9.-]/g, ""));
+  const str = String(v).replace(/[^0-9.-]/g, ""); // Remove all non-numeric chars except decimal
+  const n = parseFloat(str);
+  console.log("Parsing price:", v, "->", Number.isFinite(n) ? n : 0); // Debug log
   return Number.isFinite(n) ? n : 0;
 }
+
 function parseStock(v) {
   if (typeof v === "number") return v;
   if (!v) return 0;
   const s = String(v).toLowerCase();
   const m = s.match(/([\d.]+)\s*(k)?/);
-  if (!m) return 0;
+  if (!m) {
+    console.log("Failed to parse stock:", v); // Debug log
+    return 0;
+  }
   const base = parseFloat(m[1] || "0");
   return m[2] === "k" ? Math.round(base * 1000) : Math.round(base);
 }
+
 function normalizeFromApi(arr) {
-  return (arr || []).map((p) => ({
-    id: p.id || p.productCode || crypto.randomUUID(),
-    name: p.name || p.title || "",
-    sku: p.sku || p.SKU || p.productCode || "",
-    brand: p.brand || p.brandName || "",
-    category: p.category || p.type || "",
-    price: parsePrice(p.price),
-    status: p.status || p.stockStatus || "Active",
-    stock: parseStock(p.stock ?? p.stockQuantity ?? p.quantity),
-    description: p.description || p.desc || "",
-    image: p.image || p.img || p.imageUrl || "",
-  }));
+  return (arr || []).map((p) => {
+    console.log("Normalizing product:", p); // Debug log
+    return {
+      id: p.id || p.productCode || crypto.randomUUID(),
+      name: p.name || p.title || "",
+      sku: p.sku || p.SKU || p.productCode || "",
+      brand: p.brand || p.brandName || "",
+      category: p.category || p.type || "",
+      price: parsePrice(p.price),
+      status: p.status || p.stockStatus || "Active",
+      stock: parseStock(p.stock ?? p.stockQuantity ?? p.quantity),
+      description: p.description || p.desc || "",
+      image: p.image || p.img || p.imageUrl || "",
+    };
+  });
 }
 
 // Safe demo fallback so the table never looks empty if API/static file fail
 const SAMPLE_SEED = [
   { id: "S-1", name: "Demo Shoes", sku: "DEMO-001", brand: "Flexo", category: "Footwear", price: 49.99, status: "Active", stock: 15, description: "Sample product", image: "" },
   { id: "S-2", name: "Demo Tee", sku: "DEMO-002", brand: "Cottonly", category: "Clothing", price: 14.99, status: "Active", stock: 30, description: "Sample product", image: "" },
-  { id: "S-3", name: "Demo Mouse", sku: "DEMO-003", brand: "LogiTech", category: "Electronics", price: 19.99, status: "Low Stock", stock: 5, description: "Sample product", image: "" }
+  { id: "S-3", name: "Demo Mouse", sku: "DEMO-003", brand: "LogiTech", category: "Electronics", price: 19.99, status: "Low Stock", stock: 5, description: "Sample product", image: "" },
 ];
 
 const emptyForm = {
@@ -77,87 +90,12 @@ export default function ProductCrudPage() {
   const [showDrawer, setShowDrawer] = useState(false);
   const [selected, setSelected] = useState(null);
   const fileInputRef = useRef(null);
-useEffect(() => {
-  if (typeof window === "undefined") return;
 
-  // Migrate old key ("products") to new ("localProducts") once
-  try {
-    const old = localStorage.getItem("products");
-    const hasNew = localStorage.getItem("localProducts");
-    if (!hasNew && old) {
-      localStorage.setItem("localProducts", old);
-      localStorage.removeItem("products");
-    }
-  } catch {}
-
-  (async () => {
-    // 1) Try localStorage first
-    try {
-      const saved = localStorage.getItem("localProducts");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length) {
-          console.log("Loaded from localStorage:", parsed);
-          setProducts(parsed);
-          return;
-        }
-      }
-    } catch (e) {
-      console.error("LocalStorage error:", e);
-    }
-
-    // helper fetchers
-    const fetchDbJson = async () => {
-      try {
-        const res = await fetch("/db.json", { cache: "no-store" });
-        console.log("Fetch response status:", res.status);
-        if (!res.ok) {
-          console.error("Fetch failed:", await res.text());
-          return [];
-        }
-        const data = await res.json();
-        console.log("Raw data from db.json:", data);
-        const list = data.localProducts || data.products || data.inventory?.localProducts || data.inventory?.products || data.items || [];
-        return normalizeFromApi(list);
-      } catch (e) {
-        console.error("Fetch error:", e);
-        return [];
-      }
-    };
-    const fetchApi = async () => {
-      if (!API_BASE) {
-        console.log("API_BASE is not set");
-        return [];
-      }
-      try {
-        const res = await fetch(`${API_BASE}/localProducts`, { cache: "no-store" });
-        if (!res.ok) return [];
-        const list = await res.json();
-        console.log("Raw data from API:", list);
-        return normalizeFromApi(list);
-      } catch (e) {
-        console.error("API fetch error:", e);
-        return [];
-      }
-    };
-
-    // 2) Prefer /db.json, then API
-    const fromFile = await fetchDbJson();
-    console.log("Normalized data from db.json:", fromFile);
-    if (fromFile.length) {
-      setProducts(fromFile);
-      return;
-    }
-    const fromApi = await fetchApi();
-    console.log("Normalized data from API:", fromApi);
-    setProducts(fromApi.length ? fromApi : SAMPLE_SEED);
-  })();
-}, []);
   // ==== Bootstrap data: localStorage -> /db.json -> API ====
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // migrate old key ("products") to new ("localProducts") once
+    // Migrate old key ("products") to new ("localProducts") once
     try {
       const old = localStorage.getItem("products");
       const hasNew = localStorage.getItem("localProducts");
@@ -174,43 +112,59 @@ useEffect(() => {
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length) {
+            console.log("Loaded from localStorage:", parsed);
             setProducts(parsed);
             return;
           }
         }
-      } catch {}
+      } catch (e) {
+        console.error("LocalStorage error:", e);
+      }
 
       // helper fetchers
       const fetchDbJson = async () => {
         try {
           const res = await fetch("/db.json", { cache: "no-store" });
-          if (!res.ok) return [];
+          console.log("Fetch response status:", res.status);
+          if (!res.ok) {
+            console.error("Fetch failed:", await res.text());
+            return [];
+          }
           const data = await res.json();
+          console.log("Raw data from db.json:", data);
           const list = data.localProducts || data.products || data.inventory?.localProducts || data.inventory?.products || data.items || [];
           return normalizeFromApi(list);
-        } catch {
+        } catch (e) {
+          console.error("Fetch error:", e);
           return [];
         }
       };
       const fetchApi = async () => {
-        if (!API_BASE) return [];
+        if (!API_BASE) {
+          console.log("API_BASE is not set");
+          return [];
+        }
         try {
           const res = await fetch(`${API_BASE}/localProducts`, { cache: "no-store" });
           if (!res.ok) return [];
           const list = await res.json();
+          console.log("Raw data from API:", list);
           return normalizeFromApi(list);
-        } catch {
+        } catch (e) {
+          console.error("API fetch error:", e);
           return [];
         }
       };
 
       // 2) Prefer /db.json, then API
       const fromFile = await fetchDbJson();
+      console.log("Normalized data from db.json:", fromFile);
       if (fromFile.length) {
         setProducts(fromFile);
         return;
       }
       const fromApi = await fetchApi();
+      console.log("Normalized data from API:", fromApi);
       setProducts(fromApi.length ? fromApi : SAMPLE_SEED);
     })();
   }, []);
@@ -334,29 +288,29 @@ useEffect(() => {
             {/* Mobile list (<md) */}
             <div className="md:hidden grid gap-3">
               {filtered.map((p) => (
-                  <tr key={p.id} className="hover:bg-zinc-600">
-                    <td className="px-4 py-3">
-                      {p.image ? (
-                        <img src={p.image} alt={p.name} className="h-10 w-10 rounded-md object-cover ring-1 ring-gray-400" />
-                      ) : (
-                        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-zinc-500 text-xs text-gray-300 ring-1 ring-gray-400">IMG</div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-medium text-white">{p.name}</td>
-                    <td className="px-4 py-3 text-sm text-gray-300 hidden lg:table-cell">{p.sku}</td>
-                    <td className="px-4 py-3 text-sm text-gray-300 hidden md:table-cell">{p.category}</td>
-                    <td className="px-4 py-3 text-sm text-white">${Number(p.price || 0).toFixed(2)}</td>
-                    <td className="px-4 py-3 text-xs hidden sm:table-cell"><span className="rounded-full bg-zinc-500 px-2 py-1 text-gray-100">{p.status}</span></td>
-                    <td className="px-4 py-3 text-sm text-gray-300 hidden lg:table-cell">{p.stock}</td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex flex-wrap items-center justify-end gap-2">
-                        <button type="button" onClick={() => onView(p)} className="rounded-lg border border-gray-400 px-3 py-1.5 text-xs sm:text-sm hover:bg-zinc-500">View</button>
-                        <button type="button" onClick={() => openEdit(p)} className="rounded-lg border border-gray-400 px-3 py-1.5 text-xs sm:text-sm hover:bg-zinc-500">Edit</button>
-                        <button type="button" onClick={() => removeProduct(p.id)} className="rounded-lg border border-red-400 px-3 py-1.5 text-xs sm:text-sm text-red-400 hover:bg-red-900">Delete</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                <tr key={p.id} className="hover:bg-zinc-600">
+                  <td className="px-4 py-3">
+                    {p.image ? (
+                      <img src={p.image} alt={p.name} className="h-10 w-10 rounded-md object-cover ring-1 ring-gray-400" />
+                    ) : (
+                      <div className="flex h-10 w-10 items-center justify-center rounded-md bg-zinc-500 text-xs text-gray-300 ring-1 ring-gray-400">IMG</div>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-sm font-medium text-white">{p.name}</td>
+                  <td className="px-4 py-3 text-sm text-gray-300 hidden lg:table-cell">{p.sku}</td>
+                  <td className="px-4 py-3 text-sm text-gray-300 hidden md:table-cell">{p.category}</td>
+                  <td className="px-4 py-3 text-sm text-white">${Number(p.price || 0).toFixed(2)}</td>
+                  <td className="px-4 py-3 text-xs hidden sm:table-cell"><span className="rounded-full bg-zinc-500 px-2 py-1 text-gray-100">{p.status}</span></td>
+                  <td className="px-4 py-3 text-sm text-gray-300 hidden lg:table-cell">{p.stock}</td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      <button type="button" onClick={() => onView(p)} className="rounded-lg border border-gray-400 px-3 py-1.5 text-xs sm:text-sm hover:bg-zinc-500">View</button>
+                      <button type="button" onClick={() => openEdit(p)} className="rounded-lg border border-gray-400 px-3 py-1.5 text-xs sm:text-sm hover:bg-zinc-500">Edit</button>
+                      <button type="button" onClick={() => removeProduct(p.id)} className="rounded-lg border border-red-400 px-3 py-1.5 text-xs sm:text-sm text-red-400 hover:bg-red-900">Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
               {filtered.length === 0 && (
                 <div className="rounded-2xl border border-zinc-700 bg-zinc-700 p-6 text-center text-sm text-gray-300">
                   No products found or API failed.
