@@ -77,7 +77,82 @@ export default function ProductCrudPage() {
   const [showDrawer, setShowDrawer] = useState(false);
   const [selected, setSelected] = useState(null);
   const fileInputRef = useRef(null);
+useEffect(() => {
+  if (typeof window === "undefined") return;
 
+  // Migrate old key ("products") to new ("localProducts") once
+  try {
+    const old = localStorage.getItem("products");
+    const hasNew = localStorage.getItem("localProducts");
+    if (!hasNew && old) {
+      localStorage.setItem("localProducts", old);
+      localStorage.removeItem("products");
+    }
+  } catch {}
+
+  (async () => {
+    // 1) Try localStorage first
+    try {
+      const saved = localStorage.getItem("localProducts");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length) {
+          console.log("Loaded from localStorage:", parsed);
+          setProducts(parsed);
+          return;
+        }
+      }
+    } catch (e) {
+      console.error("LocalStorage error:", e);
+    }
+
+    // helper fetchers
+    const fetchDbJson = async () => {
+      try {
+        const res = await fetch("/db.json", { cache: "no-store" });
+        console.log("Fetch response status:", res.status);
+        if (!res.ok) {
+          console.error("Fetch failed:", await res.text());
+          return [];
+        }
+        const data = await res.json();
+        console.log("Raw data from db.json:", data);
+        const list = data.localProducts || data.products || data.inventory?.localProducts || data.inventory?.products || data.items || [];
+        return normalizeFromApi(list);
+      } catch (e) {
+        console.error("Fetch error:", e);
+        return [];
+      }
+    };
+    const fetchApi = async () => {
+      if (!API_BASE) {
+        console.log("API_BASE is not set");
+        return [];
+      }
+      try {
+        const res = await fetch(`${API_BASE}/localProducts`, { cache: "no-store" });
+        if (!res.ok) return [];
+        const list = await res.json();
+        console.log("Raw data from API:", list);
+        return normalizeFromApi(list);
+      } catch (e) {
+        console.error("API fetch error:", e);
+        return [];
+      }
+    };
+
+    // 2) Prefer /db.json, then API
+    const fromFile = await fetchDbJson();
+    console.log("Normalized data from db.json:", fromFile);
+    if (fromFile.length) {
+      setProducts(fromFile);
+      return;
+    }
+    const fromApi = await fetchApi();
+    console.log("Normalized data from API:", fromApi);
+    setProducts(fromApi.length ? fromApi : SAMPLE_SEED);
+  })();
+}, []);
   // ==== Bootstrap data: localStorage -> /db.json -> API ====
   useEffect(() => {
     if (typeof window === "undefined") return;
