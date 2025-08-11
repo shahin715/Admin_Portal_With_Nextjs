@@ -185,31 +185,34 @@ export default function ProductCrudPage() {
           <div className="mx-auto max-w-7xl">
             <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
               <h1 className="text-2xl font-semibold tracking-tight">Product Management</h1>
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-                <select
-                  value={filterCategory}
-                  onChange={(e) => setFilterCategory(e.target.value)}
-                  className="rounded-xl border border-zinc-600 bg-zinc-700 px-3 py-2 text-sm shadow-sm text-white"
-                >
-                  <option value="All">All Categories</option>
-                  {CATEGORIES.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-                <input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search products..."
-                  className="w-full sm:w-64 rounded-xl border border-zinc-600 bg-zinc-700 px-3 py-2 text-sm shadow-sm text-white placeholder-gray-300"
-                />
-                <button
-                  type="button"
-                  onClick={openCreate}
-                  className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-700"
-                >
-                  + Add Product
-                </button>
-              </div>
+            <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+  <h1 className="text-2xl font-semibold tracking-tight">Product Management</h1>
+  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+    <select
+      value={filterCategory}
+      onChange={(e) => setFilterCategory(e.target.value)}
+      className="rounded-xl border border-zinc-600 bg-zinc-700 px-3 py-2 text-sm shadow-sm text-white"
+    >
+      <option value="All">All Categories</option>
+      {CATEGORIES.map((c) => (
+        <option key={c} value={c}>{c}</option>
+      ))}
+    </select>
+    <input
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+      placeholder="Search products..."
+      className="w-full sm:w-64 rounded-xl border border-zinc-600 bg-zinc-700 px-3 py-2 text-sm shadow-sm text-white placeholder-gray-300"
+    />
+    <button
+      type="button"
+      onClick={openCreate}
+      className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-700"
+    >
+      + Add Product
+    </button>
+  </div>
+</div>
             </div>
             <div className="md:hidden grid gap-3">
               {filtered.map((p) => (
