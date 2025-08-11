@@ -77,6 +77,8 @@ export default function ProductCrudPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    console.log("ProductCrudPage loaded at path:", window.location.pathname); // Debug log
+
     // Clear localStorage temporarily for debugging
     localStorage.removeItem("localProducts");
 
@@ -185,34 +187,31 @@ export default function ProductCrudPage() {
           <div className="mx-auto max-w-7xl">
             <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
               <h1 className="text-2xl font-semibold tracking-tight">Product Management</h1>
-            <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-  <h1 className="text-2xl font-semibold tracking-tight">Product Management</h1>
-  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-    <select
-      value={filterCategory}
-      onChange={(e) => setFilterCategory(e.target.value)}
-      className="rounded-xl border border-zinc-600 bg-zinc-700 px-3 py-2 text-sm shadow-sm text-white"
-    >
-      <option value="All">All Categories</option>
-      {CATEGORIES.map((c) => (
-        <option key={c} value={c}>{c}</option>
-      ))}
-    </select>
-    <input
-      value={search}
-      onChange={(e) => setSearch(e.target.value)}
-      placeholder="Search products..."
-      className="w-full sm:w-64 rounded-xl border border-zinc-600 bg-zinc-700 px-3 py-2 text-sm shadow-sm text-white placeholder-gray-300"
-    />
-    <button
-      type="button"
-      onClick={openCreate}
-      className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-700"
-    >
-      + Add Product
-    </button>
-  </div>
-</div>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <select
+                  value={filterCategory}
+                  onChange={(e) => setFilterCategory(e.target.value)}
+                  className="rounded-xl border border-zinc-600 bg-zinc-700 px-3 py-2 text-sm shadow-sm text-white"
+                >
+                  <option value="All">All Categories</option>
+                  {CATEGORIES.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search products..."
+                  className="w-full sm:w-64 rounded-xl border border-zinc-600 bg-zinc-700 px-3 py-2 text-sm shadow-sm text-white placeholder-gray-300"
+                />
+                <button
+                  type="button"
+                  onClick={openCreate}
+                  className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-700 flex min-w-[100px]"
+                >
+                  + Add Product
+                </button>
+              </div>
             </div>
             <div className="md:hidden grid gap-3">
               {filtered.map((p) => (
@@ -368,7 +367,9 @@ export default function ProductCrudPage() {
               </div>
               <div className="md:col-span-2 flex items-center justify-end gap-2 pt-2">
                 <button type="button" onClick={() => setShowModal(false)} className="rounded-xl border border-zinc-600 px-4 py-2 text-sm hover:bg-zinc-800">Cancel</button>
-                <button type="submit" className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Save</button>
+                <button type="submit" className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 flex min-w-[100px]">
+                  Save
+                </button>
               </div>
             </form>
           </div>
