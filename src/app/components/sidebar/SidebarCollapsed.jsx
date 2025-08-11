@@ -58,7 +58,7 @@ export default function SidebarCollapsed() {
       {/* Nav icons */}
       <nav className="flex flex-col items-center space-y-6 flex-grow">
         <SidebarIcon icon={Home} label="Home" href="/" isActive={pathname === "/"} />
-        <SidebarIcon icon={Package} label="Products" href="/products" isActive={pathname === "/products"} />
+        <SidebarIcon icon={Package} label="Products" href="/productMangement" isActive={pathname === "/productMangement"} />
         <SidebarIcon icon={LayoutGrid} label="Dashboard" href="/notFound" isActive={pathname === "/notFound"} />
         <SidebarIcon icon={AlignJustify} label="Menu" href="/notFound" isActive={pathname === "/notFound"} />
         <SidebarIcon icon={Users} label="Users" href="/notFound" isActive={pathname === "/notFound"} />
