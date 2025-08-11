@@ -643,7 +643,7 @@
       "status": "Active",
       "stock": 120,
       "description": "Soft cotton tee with classic fit.",
-      "image": "/T‑Shirt.jpg"
+      "image": "/t-shirt.jpg"
     },
     {
       "id": "P-0003",
@@ -655,7 +655,7 @@
       "status": "Active",
       "stock": 80,
       "description": "2.4Ghz ergonomic mouse with silent clicks.",
-      "image": "/Wireless Mouse.webp"
+      "image": "/wireless-mouse.webp"
     },
     {
       "id": "P-0004",
@@ -679,7 +679,7 @@
       "status": "Active",
       "stock": 55,
       "description": "Dishwasher‑safe 350ml ceramic mug.",
-      "image": "/USB‑C Cable 1m.jpg"
+      "image": "/usb-c-cable-1m.jpg"
     },
     {
       "id": "P-0006",

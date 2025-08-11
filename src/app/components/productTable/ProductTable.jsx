@@ -7,11 +7,48 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
-import { Search, MoreHorizontal, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { MoreHorizontal, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import AddProductForm from "./addProduct/page";
 
+// ---- Build a safe path to public/db.json (works on Vercel with/without basePath) ----
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH || ""; // e.g. "" or "/myapp"
+const DB_URL = `${BASE}/db.json`;
+
+// ---- Helpers ----
+const parseMoney = (v) => {
+  if (typeof v === "number") return v;
+  if (!v) return 0;
+  const n = parseFloat(String(v).replace(/[^0-9.\-]/g, ""));
+  return Number.isFinite(n) ? n : 0;
+};
+const parseMetric = (v) => {
+  if (typeof v === "number") return v;
+  if (!v) return 0;
+  const s = String(v).trim().toLowerCase();
+  const m = s.match(/([0-9]*\.?[0-9]+)/);
+  if (!m) return 0;
+  const num = parseFloat(m[1]);
+  return s.includes("k") ? num * 1000 : num;
+};
+
+// Map localProducts (CRUD shape) -> table row shape used here
+const fromLocalProduct = (p) => ({
+  id: p.id,
+  name: p.name,
+  productCode: p.sku,
+  category: p.category,
+  brandName: p.brand,
+  brandColor: "#6B7280",
+  price: typeof p.price === "number" ? p.price : parseMoney(p.price),
+  stockStatus: p.status,
+  stockQuantity: String(p.stock ?? 0),
+  views: "0",
+  viewsChange: "0%",
+  viewsChangeType: "increase",
+});
+
 export default function ProductTable() {
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState([]); // table-shape list
   const [searchTerm, setSearchTerm] = useState("");
   const [sortField, setSortField] = useState("");
   const [sortOrder, setSortOrder] = useState("asc");
@@ -23,34 +60,34 @@ export default function ProductTable() {
 
   const fetchProducts = async () => {
     try {
-      // Check localStorage first
-      let storedProducts;
+      // 1) localStorage cache (table-shape) — uses key "products" to avoid clashing with CRUD's "localProducts"
+      let stored;
       try {
-        storedProducts = JSON.parse(localStorage.getItem("products") || "[]");
-      } catch (err) {
-        console.warn("Invalid localStorage data, resetting to empty array:", err);
-        storedProducts = [];
+        stored = JSON.parse(localStorage.getItem("products") || "[]");
+      } catch {
+        stored = [];
         localStorage.setItem("products", JSON.stringify([]));
       }
-      if (storedProducts.length > 0) {
-        console.log("Loaded from localStorage:", storedProducts);
-        setProducts(storedProducts);
+      if (Array.isArray(stored) && stored.length) {
+        setProducts(stored);
         return;
       }
-      // Fetch db.json, matching SalesReport
-      console.log("Fetching /db.json...");
-      const response = await fetch("/db.json");
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      const data = await response.json();
-      console.log("Raw db.json data:", data);
-      if (!data.products || !Array.isArray(data.products)) {
-        throw new Error("Invalid or missing 'products' key in db.json");
-      }
-      console.log("Loaded products from db.json:", data.products);
-      setProducts(data.products);
-      localStorage.setItem("products", JSON.stringify(data.products));
+
+      // 2) fetch public/db.json — cache bust + no-store to beat CDN caching
+      const res = await fetch(`${DB_URL}?v=${Date.now()}`, { cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      // Accept both shapes: products[] (already table shape) or localProducts[] (CRUD shape)
+      const list = Array.isArray(data.products)
+        ? data.products
+        : Array.isArray(data.localProducts)
+        ? data.localProducts.map(fromLocalProduct)
+        : [];
+
+      setProducts(list);
+      localStorage.setItem("products", JSON.stringify(list));
+      setError(null);
     } catch (err) {
       console.error("Error fetching products:", err);
       setError(`Failed to load products: ${err.message}`);
@@ -60,6 +97,7 @@ export default function ProductTable() {
 
   useEffect(() => {
     fetchProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSort = (field) => {
@@ -70,29 +108,39 @@ export default function ProductTable() {
 
   const handleDelete = (id) => {
     try {
-      const updatedProducts = products.filter((product) => product.id !== id);
-      setProducts(updatedProducts);
-      localStorage.setItem("products", JSON.stringify(updatedProducts));
-      console.log("Deleted product with id:", id);
+      const updated = products.filter((p) => p.id !== id);
+      setProducts(updated);
+      localStorage.setItem("products", JSON.stringify(updated));
     } catch (err) {
-      console.error("Error deleting product:", err);
       setError(`Failed to delete product: ${err.message}`);
     }
   };
 
-  const filteredProducts = products.filter((product) =>
-    product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.brandName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.category?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProducts = products.filter((p) => {
+    const q = searchTerm.toLowerCase();
+    return (
+      p.name?.toLowerCase().includes(q) ||
+      p.brandName?.toLowerCase().includes(q) ||
+      p.category?.toLowerCase().includes(q) ||
+      p.productCode?.toLowerCase().includes(q)
+    );
+  });
 
-  const sortedProducts = filteredProducts.sort((a, b) => {
-    let aVal = a[sortField] || "";
-    let bVal = b[sortField] || "";
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    if (!sortField) return 0;
+    let aVal = a[sortField];
+    let bVal = b[sortField];
 
-    if (sortField === "price" || sortField === "views") {
-      aVal = parseFloat(aVal) || 0;
-      bVal = parseFloat(bVal) || 0;
+    // numeric fields which may be strings
+    if (sortField === "price") {
+      aVal = parseMoney(aVal);
+      bVal = parseMoney(bVal);
+    } else if (sortField === "views" || sortField === "stockQuantity") {
+      aVal = parseMetric(aVal);
+      bVal = parseMetric(bVal);
+    } else {
+      aVal = (aVal ?? "").toString().toLowerCase();
+      bVal = (bVal ?? "").toString().toLowerCase();
     }
 
     if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
@@ -102,13 +150,11 @@ export default function ProductTable() {
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentProducts = sortedProducts.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(sortedProducts.length / itemsPerPage);
+  const current = sortedProducts.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.max(1, Math.ceil(sortedProducts.length / itemsPerPage));
 
   const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
 
   const renderSortIcon = (field) => {
@@ -119,16 +165,11 @@ export default function ProductTable() {
   return (
     <div className="w-full p-0 bg-zinc-800 text-gray-100 px-8 pt-1">
       <div className="w-full overflow-x-auto">
-        {error && (
-          <div className="p-4 bg-red-600 text-white rounded-md mb-4">
-            {error}
-          </div>
-        )}
+        {error && <div className="p-4 bg-red-600 text-white rounded-md mb-4">{error}</div>}
         {products.length === 0 && !error && (
-          <div className="p-4 bg-yellow-600 text-white rounded-md mb-4">
-            No products available. Add a product to get started.
-          </div>
+          <div className="p-4 bg-yellow-600 text-white rounded-md mb-4">No products available. Add a product to get started.</div>
         )}
+
         <div className="flex items-center justify-between p-4 border border-zinc-700 bg-zinc-900 rounded-xl mb-4">
           <h1 className="text-lg font-semibold">Products Table</h1>
           <div className="flex items-center space-x-2">
@@ -163,18 +204,38 @@ export default function ProductTable() {
           <TableHeader className="bg-zinc-800">
             <TableRow>
               <TableHead className="w-12 px-4 py-2 rounded-tl-xl"><Checkbox /></TableHead>
-              <TableHead><Button variant="ghost" onClick={() => handleSort("name")} className="flex items-center gap-1 px-0">NAME {renderSortIcon("name")}</Button></TableHead>
-              <TableHead><Button variant="ghost" onClick={() => handleSort("category")} className="flex items-center gap-1 px-0">CATEGORY {renderSortIcon("category")}</Button></TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => handleSort("name")} className="flex items-center gap-1 px-0">
+                  NAME {renderSortIcon("name")}
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => handleSort("category")} className="flex items-center gap-1 px-0">
+                  CATEGORY {renderSortIcon("category")}
+                </Button>
+              </TableHead>
               <TableHead>BRAND</TableHead>
-              <TableHead><Button variant="ghost" onClick={() => handleSort("price")} className="flex items-center gap-1 px-0">PRICE {renderSortIcon("price")}</Button></TableHead>
-              <TableHead><Button variant="ghost" onClick={() => handleSort("stockQuantity")} className="flex items-center gap-1 px-0">STOCK {renderSortIcon("stockQuantity")}</Button></TableHead>
-              <TableHead><Button variant="ghost" onClick={() => handleSort("views")} className="flex items-center gap-1 px-0">VIEWS {renderSortIcon("views")}</Button></TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => handleSort("price")} className="flex items-center gap-1 px-0">
+                  PRICE {renderSortIcon("price")}
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => handleSort("stockQuantity")} className="flex items-center gap-1 px-0">
+                  STOCK {renderSortIcon("stockQuantity")}
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => handleSort("views")} className="flex items-center gap-1 px-0">
+                  VIEWS {renderSortIcon("views")}
+                </Button>
+              </TableHead>
               <TableHead className="w-12 px-4 text-right rounded-tr-xl"></TableHead>
             </TableRow>
           </TableHeader>
 
           <TableBody>
-            {currentProducts.map((product) => (
+            {current.map((product) => (
               <TableRow key={product.id} className="hover:bg-zinc-700 transition">
                 <TableCell className="px-4"><Checkbox /></TableCell>
                 <TableCell className="py-3">
@@ -194,14 +255,11 @@ export default function ProductTable() {
                     {product.brandName || "N/A"}
                   </div>
                 </TableCell>
-                <TableCell>${parseFloat(product.price || 0).toFixed(2)}</TableCell>
+                <TableCell>${parseMoney(product.price).toFixed(2)}</TableCell>
                 <TableCell>
                   <div className={`font-medium ${
-                    product.stockStatus === "Available"
-                      ? "text-green-500"
-                      : product.stockStatus === "Limited Supply"
-                      ? "text-yellow-400"
-                      : "text-red-500"
+                    product.stockStatus === "Available" ? "text-green-500" :
+                    product.stockStatus === "Limited Supply" ? "text-yellow-400" : "text-red-500"
                   }`}>
                     {product.stockStatus || "N/A"}
                   </div>
@@ -209,16 +267,8 @@ export default function ProductTable() {
                 </TableCell>
                 <TableCell>
                   <div>{product.views || 0}</div>
-                  <div className={`flex items-center text-xs ${
-                    product.viewsChangeType === "increase"
-                      ? "text-green-400"
-                      : "text-red-400"
-                  }`}>
-                    {product.viewsChangeType === "increase" ? (
-                      <ArrowUp className="h-3 w-3 mr-1" />
-                    ) : (
-                      <ArrowDown className="h-3 w-3 mr-1" />
-                    )}
+                  <div className={`flex items-center text-xs ${product.viewsChangeType === "increase" ? "text-green-400" : "text-red-400"}`}>
+                    {product.viewsChangeType === "increase" ? <ArrowUp className="h-3 w-3 mr-1" /> : <ArrowDown className="h-3 w-3 mr-1" />}
                     {product.viewsChange || "0%"}
                   </div>
                 </TableCell>
@@ -230,11 +280,12 @@ export default function ProductTable() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="bg-zinc-900 border border-zinc-700 text-gray-100">
-                      <DropdownMenuItem onClick={() => {
-                        setProductToEdit(product);
-                        setIsDialogOpen(true);
-                      }}>Edit</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDelete(product.id)}>Delete</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => { setProductToEdit(product); setIsDialogOpen(true); }}>
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDelete(product.id)}>
+                        Delete
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
@@ -251,12 +302,7 @@ export default function ProductTable() {
               </PaginationItem>
               {Array.from({ length: totalPages }, (_, i) => (
                 <PaginationItem key={i}>
-                  <PaginationLink
-                    className="text-gray-700"
-                    href="#"
-                    isActive={currentPage === i + 1}
-                    onClick={() => handlePageChange(i + 1)}
-                  >
+                  <PaginationLink href="#" isActive={currentPage === i + 1} onClick={() => handlePageChange(i + 1)}>
                     {i + 1}
                   </PaginationLink>
                 </PaginationItem>
@@ -267,7 +313,7 @@ export default function ProductTable() {
             </PaginationContent>
           </Pagination>
           <div className="text-sm text-gray-400">
-            {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, sortedProducts.length)} of {sortedProducts.length} entries
+            {sortedProducts.length === 0 ? 0 : indexOfFirstItem + 1} - {Math.min(indexOfLastItem, sortedProducts.length)} of {sortedProducts.length} entries
           </div>
         </div>
       </div>
