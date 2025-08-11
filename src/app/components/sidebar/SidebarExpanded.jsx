@@ -44,7 +44,7 @@ export default function SidebarExpanded({ onClose }) {
             <LayoutDashboard className="w-5 h-5" />
             Dashboard
           </Link>
-          <Link href="/products" className={linkClass("/products")}>
+          <Link href="/productMangement" className={linkClass("/productMangement")}>
             <Package className="w-5 h-5" />
             Products
           </Link>
@@ -78,4 +78,3 @@ export default function SidebarExpanded({ onClose }) {
     </aside>
   );
 }
-

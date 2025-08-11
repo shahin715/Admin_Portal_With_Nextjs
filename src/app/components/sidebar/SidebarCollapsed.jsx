@@ -61,7 +61,7 @@ export default function SidebarCollapsed() {
         <SidebarIcon icon={Package} label="Products" href="/productMangement" isActive={pathname === "/productMangement"} />
         <SidebarIcon icon={LayoutGrid} label="Dashboard" href="/notFound" isActive={pathname === "/notFound"} />
         <SidebarIcon icon={AlignJustify} label="Menu" href="/notFound" isActive={pathname === "/notFound"} />
-        <SidebarIcon icon={Users} label="Users" href="/notFound" isActive={pathname === "/notFound"} />
+        <SidebarIcon icon={Users} label="Users" href="/productMangement" isActive={pathname === "/productMangement"} />
         <SidebarIcon icon={Lightbulb} label="Ideas" href="/notFound" isActive={pathname === "/notFound"} />
       </nav>
 
