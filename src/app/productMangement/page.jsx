@@ -5,9 +5,6 @@ import SidebarCollapsed from "../components/sidebar/SidebarCollapsed";
 import SidebarExpanded from "../components/sidebar/SidebarExpanded";
 import Navbar from "../components/navbar/Navbar";
 
-// Optional: Import db.json statically (uncomment and adjust path if using this approach)
-// import dbJson from '../../public/db.json';
-
 // ==== API base (optional) ====
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim();
 
@@ -15,19 +12,19 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim();
 function parsePrice(v) {
   if (typeof v === "number") return v;
   if (v == null) return 0;
-  const str = String(v).replace(/[^0-9.-]/g, ""); // Remove all non-numeric chars except decimal
+  const str = String(v).replace(/[^\d.-]/g, ""); // Remove $ and other non-numeric chars
   const n = parseFloat(str);
-  console.log("Parsing price:", v, "->", Number.isFinite(n) ? n : 0); // Debug log
+  console.log("Parsing price:", v, "->", Number.isFinite(n) ? n : 0);
   return Number.isFinite(n) ? n : 0;
 }
 
 function parseStock(v) {
   if (typeof v === "number") return v;
   if (!v) return 0;
-  const s = String(v).toLowerCase();
+  const s = String(v).toLowerCase().replace(/stock/g, "").trim(); // Remove "stock" suffix
   const m = s.match(/([\d.]+)\s*(k)?/);
   if (!m) {
-    console.log("Failed to parse stock:", v); // Debug log
+    console.log("Failed to parse stock:", v);
     return 0;
   }
   const base = parseFloat(m[1] || "0");
@@ -36,11 +33,11 @@ function parseStock(v) {
 
 function normalizeFromApi(arr) {
   return (arr || []).map((p) => {
-    console.log("Normalizing product:", p); // Debug log
+    console.log("Normalizing product:", p);
     return {
       id: p.id || p.productCode || crypto.randomUUID(),
       name: p.name || p.title || "",
-      sku: p.sku || p.SKU || p.productCode || "",
+      sku: p.sku || p.productCode || "",
       brand: p.brand || p.brandName || "",
       category: p.category || p.type || "",
       price: parsePrice(p.price),
@@ -52,35 +49,21 @@ function normalizeFromApi(arr) {
   });
 }
 
-// Safe demo fallback so the table never looks empty if API/static file fail
+// Safe demo fallback
 const SAMPLE_SEED = [
   { id: "S-1", name: "Demo Shoes", sku: "DEMO-001", brand: "Flexo", category: "Footwear", price: 49.99, status: "Active", stock: 15, description: "Sample product", image: "" },
   { id: "S-2", name: "Demo Tee", sku: "DEMO-002", brand: "Cottonly", category: "Clothing", price: 14.99, status: "Active", stock: 30, description: "Sample product", image: "" },
   { id: "S-3", name: "Demo Mouse", sku: "DEMO-003", brand: "LogiTech", category: "Electronics", price: 19.99, status: "Low Stock", stock: 5, description: "Sample product", image: "" },
 ];
 
-const emptyForm = {
-  id: "",
-  name: "",
-  sku: "",
-  brand: "",
-  category: "",
-  price: "",
-  status: "Active",
-  stock: "",
-  description: "",
-  image: "",
-};
-
+const emptyForm = { id: "", name: "", sku: "", brand: "", category: "", price: "", status: "Active", stock: "", description: "", image: "" };
 const CATEGORIES = ["Footwear", "Clothing", "Electronics", "Accessories", "Home", "Beauty", "Other"];
 const STATUSES = ["Active", "Inactive", "Low Stock", "Out of Stock", "Draft"];
 
 export default function ProductCrudPage() {
-  // ==== Shell state (layout) ====
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const toggleSidebar = () => setIsSidebarOpen((v) => !v);
 
-  // ==== Data state ====
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("All");
@@ -91,37 +74,13 @@ export default function ProductCrudPage() {
   const [selected, setSelected] = useState(null);
   const fileInputRef = useRef(null);
 
-  // ==== Bootstrap data: localStorage -> /db.json -> API ====
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // Migrate old key ("products") to new ("localProducts") once
-    try {
-      const old = localStorage.getItem("products");
-      const hasNew = localStorage.getItem("localProducts");
-      if (!hasNew && old) {
-        localStorage.setItem("localProducts", old);
-        localStorage.removeItem("products");
-      }
-    } catch {}
+    // Clear localStorage temporarily for debugging
+    localStorage.removeItem("localProducts");
 
     (async () => {
-      // 1) Try localStorage first
-      try {
-        const saved = localStorage.getItem("localProducts");
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length) {
-            console.log("Loaded from localStorage:", parsed);
-            setProducts(parsed);
-            return;
-          }
-        }
-      } catch (e) {
-        console.error("LocalStorage error:", e);
-      }
-
-      // helper fetchers
       const fetchDbJson = async () => {
         try {
           const res = await fetch("/db.json", { cache: "no-store" });
@@ -139,37 +98,17 @@ export default function ProductCrudPage() {
           return [];
         }
       };
-      const fetchApi = async () => {
-        if (!API_BASE) {
-          console.log("API_BASE is not set");
-          return [];
-        }
-        try {
-          const res = await fetch(`${API_BASE}/localProducts`, { cache: "no-store" });
-          if (!res.ok) return [];
-          const list = await res.json();
-          console.log("Raw data from API:", list);
-          return normalizeFromApi(list);
-        } catch (e) {
-          console.error("API fetch error:", e);
-          return [];
-        }
-      };
 
-      // 2) Prefer /db.json, then API
       const fromFile = await fetchDbJson();
       console.log("Normalized data from db.json:", fromFile);
       if (fromFile.length) {
         setProducts(fromFile);
         return;
       }
-      const fromApi = await fetchApi();
-      console.log("Normalized data from API:", fromApi);
-      setProducts(fromApi.length ? fromApi : SAMPLE_SEED);
+      setProducts(SAMPLE_SEED);
     })();
   }, []);
 
-  // Persist on every change (even empty array)
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
@@ -179,7 +118,6 @@ export default function ProductCrudPage() {
     }
   }, [products]);
 
-  // ==== Derived list (filter + search) ====
   const filtered = useMemo(() => {
     return products.filter((p) => {
       const inSearch = `${p.name} ${p.sku} ${p.brand} ${p.category}`.toLowerCase().includes(search.toLowerCase());
@@ -188,7 +126,6 @@ export default function ProductCrudPage() {
     });
   }, [products, search, filterCategory]);
 
-  // ==== CRUD handlers ====
   const openCreate = () => {
     setEditingId(null);
     setForm({ ...emptyForm, id: crypto.randomUUID() });
@@ -229,15 +166,11 @@ export default function ProductCrudPage() {
     reader.readAsDataURL(file);
   };
 
-  // ==== UI ====
   return (
     <div className="flex min-h-screen w-full bg-zinc-900 text-white overflow-hidden">
-      {/* SidebarCollapsed - always visible on desktop */}
       <div className="hidden lg:flex fixed top-0 left-0 w-20 h-full bg-zinc-900 border-r border-zinc-800 z-40">
         <SidebarCollapsed />
       </div>
-
-      {/* SidebarExpanded - toggled on mobile */}
       {isSidebarOpen && (
         <div className="fixed inset-y-0 left-0 z-50 w-64 bg-zinc-900 border-r border-zinc-800 shadow-lg flex flex-col">
           <div className="flex justify-end p-3">
@@ -246,16 +179,10 @@ export default function ProductCrudPage() {
           <SidebarExpanded />
         </div>
       )}
-
-      {/* Main Content */}
       <div className="flex flex-col flex-1 overflow-y-auto lg:ml-20">
-        {/* Navbar with hamburger toggle */}
         <Navbar onToggleSidebar={toggleSidebar} />
-
-        {/* Page body */}
         <div className="min-h-[calc(100vh-56px)] bg-zinc-800 p-6">
           <div className="mx-auto max-w-7xl">
-            {/* Header */}
             <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
               <h1 className="text-2xl font-semibold tracking-tight">Product Management</h1>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
@@ -284,8 +211,6 @@ export default function ProductCrudPage() {
                 </button>
               </div>
             </div>
-
-            {/* Mobile list (<md) */}
             <div className="md:hidden grid gap-3">
               {filtered.map((p) => (
                 <tr key={p.id} className="hover:bg-zinc-600">
@@ -320,8 +245,6 @@ export default function ProductCrudPage() {
                 </div>
               )}
             </div>
-
-            {/* Desktop table (≥ md) */}
             <div className="hidden md:block overflow-x-auto rounded-2xl border border-zinc-700 bg-zinc-700 shadow-sm">
               <table className="min-w-[900px] w-full divide-y divide-zinc-600">
                 <thead className="bg-zinc-700">
@@ -377,8 +300,6 @@ export default function ProductCrudPage() {
           </div>
         </div>
       </div>
-
-      {/* Modal: Create/Edit */}
       {showModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4">
           <div className="w-full max-w-2xl rounded-2xl bg-zinc-900 text-white shadow-2xl">
@@ -386,9 +307,7 @@ export default function ProductCrudPage() {
               <h2 className="text-lg font-semibold">{editingId ? "Edit Product" : "Add Product"}</h2>
               <button type="button" onClick={() => setShowModal(false)} className="rounded-full p-2 hover:bg-zinc-800">✕</button>
             </div>
-
             <form onSubmit={saveProduct} className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2">
-              {/* Image uploader */}
               <div className="md:col-span-2">
                 <label className="mb-1 block text-sm font-medium">Image</label>
                 <div className="flex items-center gap-4 rounded-xl border border-dashed border-zinc-600 p-4">
@@ -403,7 +322,6 @@ export default function ProductCrudPage() {
                   </div>
                 </div>
               </div>
-
               <div>
                 <label className="mb-1 block text-sm font-medium">Name</label>
                 <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full rounded-xl border border-zinc-600 bg-zinc-800 px-3 py-2 text-sm text-white placeholder-gray-400" placeholder="Product name" />
@@ -445,7 +363,6 @@ export default function ProductCrudPage() {
                 <label className="mb-1 block text-sm font-medium">Description</label>
                 <textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full rounded-xl border border-zinc-600 bg-zinc-800 px-3 py-2 text-sm text-white placeholder-gray-400" placeholder="Short details" />
               </div>
-
               <div className="md:col-span-2 flex items-center justify-end gap-2 pt-2">
                 <button type="button" onClick={() => setShowModal(false)} className="rounded-xl border border-zinc-600 px-4 py-2 text-sm hover:bg-zinc-800">Cancel</button>
                 <button type="submit" className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Save</button>
@@ -454,8 +371,6 @@ export default function ProductCrudPage() {
           </div>
         </div>
       )}
-
-      {/* Drawer: View details */}
       <div className={`fixed inset-y-0 right-0 z-[55] w-full max-w-full md:max-w-md transform bg-zinc-900 text-white shadow-2xl transition-transform duration-300 ${showDrawer ? "translate-x-0" : "translate-x-full"}`}>
         <div className="flex items-center justify-between border-b border-zinc-700 p-4">
           <h3 className="text-base font-semibold">Product Details</h3>
@@ -463,9 +378,7 @@ export default function ProductCrudPage() {
         </div>
         {selected ? (
           <div className="space-y-4 p-4">
-            {selected.image && (
-              <img src={selected.image} alt={selected.name} className="h-52 w-full rounded-xl object-cover" />
-            )}
+            {selected.image && <img src={selected.image} alt={selected.name} className="h-52 w-full rounded-xl object-cover" />}
             <div>
               <h4 className="text-xl font-semibold">{selected.name}</h4>
               <p className="text-sm text-gray-400">SKU: {selected.sku}</p>
