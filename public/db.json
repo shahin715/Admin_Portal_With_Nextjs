@@ -619,5 +619,103 @@
       "code": "IT",
       "name": "Italy"
     }
+  ],
+  "localProducts": [
+    {
+      "id": "P-0001",
+      "name": "Sneakers",
+      "sku": "SNK-001",
+      "brand": "Flexo",
+      "category": "Footwear",
+      "price": 99.99,
+      "status": "Active",
+      "stock": 42,
+      "description": "Stylish black/white sneakers for casual wear.",
+      "image": ""
+    },
+    {
+      "id": "P-0002",
+      "name": "T‑Shirt",
+      "sku": "TEE-001",
+      "brand": "Cottonly",
+      "category": "Clothing",
+      "price": 19.99,
+      "status": "Active",
+      "stock": 120,
+      "description": "Soft cotton tee with classic fit.",
+      "image": ""
+    },
+    {
+      "id": "P-0003",
+      "name": "Wireless Mouse",
+      "sku": "MSE-101",
+      "brand": "LogiTech",
+      "category": "Electronics",
+      "price": 24.5,
+      "status": "Active",
+      "stock": 80,
+      "description": "2.4Ghz ergonomic mouse with silent clicks.",
+      "image": ""
+    },
+    {
+      "id": "P-0004",
+      "name": "USB‑C Cable 1m",
+      "sku": "CAB-1M",
+      "brand": "BaseUS",
+      "category": "Accessories",
+      "price": 6.5,
+      "status": "Low Stock",
+      "stock": 12,
+      "description": "Fast‑charge braided cable.",
+      "image": ""
+    },
+    {
+      "id": "P-0005",
+      "name": "Ceramic Mug",
+      "sku": "MUG-200",
+      "brand": "Homey",
+      "category": "Home",
+      "price": 8.99,
+      "status": "Active",
+      "stock": 55,
+      "description": "Dishwasher‑safe 350ml ceramic mug.",
+      "image": ""
+    },
+    {
+      "id": "P-0006",
+      "name": "Face Serum 30ml",
+      "sku": "BEA-030",
+      "brand": "GlowUp",
+      "category": "Beauty",
+      "price": 14.99,
+      "status": "Active",
+      "stock": 33,
+      "description": "Vitamin C brightening serum.",
+      "image": ""
+    },
+    {
+      "id": "P-0007",
+      "name": "Notebook A5",
+      "sku": "NTB-A5",
+      "brand": "PaperFox",
+      "category": "Other",
+      "price": 3.99,
+      "status": "Draft",
+      "stock": 200,
+      "description": "A5 ruled notebook, 120 pages.",
+      "image": ""
+    },
+    {
+      "id": "P-0008",
+      "name": "Bluetooth Speaker",
+      "sku": "SPK-300",
+      "brand": "Soundo",
+      "category": "Electronics",
+      "price": 39.0,
+      "status": "Out of Stock",
+      "stock": 0,
+      "description": "Portable BT 5.3 speaker, 10h playtime.",
+      "image": ""
+    }
   ]
 }

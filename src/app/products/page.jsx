@@ -5,6 +5,47 @@ import SidebarCollapsed from "../components/sidebar/SidebarCollapsed";
 import SidebarExpanded from "../components/sidebar/SidebarExpanded";
 import Navbar from "../components/navbar/Navbar";
 
+// ==== API base (optional) ====
+const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim();
+
+// ==== Helpers to normalize different shapes (like your db.json) ====
+function parsePrice(v) {
+  if (typeof v === "number") return v;
+  if (v == null) return 0;
+  const n = parseFloat(String(v).replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(n) ? n : 0;
+}
+function parseStock(v) {
+  if (typeof v === "number") return v;
+  if (!v) return 0;
+  const s = String(v).toLowerCase();
+  const m = s.match(/([\d.]+)\s*(k)?/);
+  if (!m) return 0;
+  const base = parseFloat(m[1] || "0");
+  return m[2] === "k" ? Math.round(base * 1000) : Math.round(base);
+}
+function normalizeFromApi(arr) {
+  return (arr || []).map((p) => ({
+    id: p.id || p.productCode || crypto.randomUUID(),
+    name: p.name || p.title || "",
+    sku: p.sku || p.SKU || p.productCode || "",
+    brand: p.brand || p.brandName || "",
+    category: p.category || p.type || "",
+    price: parsePrice(p.price),
+    status: p.status || p.stockStatus || "Active",
+    stock: parseStock(p.stock ?? p.stockQuantity ?? p.quantity),
+    description: p.description || p.desc || "",
+    image: p.image || p.img || p.imageUrl || "",
+  }));
+}
+
+// Safe demo fallback so the table never looks empty if API/static file fail
+const SAMPLE_SEED = [
+  { id: "S-1", name: "Demo Shoes", sku: "DEMO-001", brand: "Flexo", category: "Footwear", price: 49.99, status: "Active", stock: 15, description: "Sample product", image: "" },
+  { id: "S-2", name: "Demo Tee", sku: "DEMO-002", brand: "Cottonly", category: "Clothing", price: 14.99, status: "Active", stock: 30, description: "Sample product", image: "" },
+  { id: "S-3", name: "Demo Mouse", sku: "DEMO-003", brand: "LogiTech", category: "Electronics", price: 19.99, status: "Low Stock", stock: 5, description: "Sample product", image: "" }
+];
+
 const emptyForm = {
   id: "",
   name: "",
@@ -18,21 +59,15 @@ const emptyForm = {
   image: "",
 };
 
-const CATEGORIES = [
-  "Footwear",
-  "Clothing",
-  "Electronics",
-  "Accessories",
-  "Home",
-  "Beauty",
-  "Other",
-];
+const CATEGORIES = ["Footwear", "Clothing", "Electronics", "Accessories", "Home", "Beauty", "Other"];
 const STATUSES = ["Active", "Inactive", "Low Stock", "Out of Stock", "Draft"];
 
 export default function ProductCrudPage() {
+  // ==== Shell state (layout) ====
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const toggleSidebar = () => setIsSidebarOpen((v) => !v);
 
+  // ==== Data state ====
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("All");
@@ -43,50 +78,98 @@ export default function ProductCrudPage() {
   const [selected, setSelected] = useState(null);
   const fileInputRef = useRef(null);
 
-  // Load products from localStorage
+  // ==== Bootstrap data: localStorage -> /db.json -> API ====
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const saved = localStorage.getItem("products");
-    if (saved) {
-      try {
-        setProducts(JSON.parse(saved));
-      } catch (_) {
-        setProducts([]);
+
+    // migrate old key ("products") to new ("localProducts") once
+    try {
+      const old = localStorage.getItem("products");
+      const hasNew = localStorage.getItem("localProducts");
+      if (!hasNew && old) {
+        localStorage.setItem("localProducts", old);
+        localStorage.removeItem("products");
       }
-    } else {
-      setProducts([]);
-    }
+    } catch {}
+
+    (async () => {
+      // 1) Try localStorage first
+      try {
+        const saved = localStorage.getItem("localProducts");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length) {
+            setProducts(parsed);
+            return;
+          }
+        }
+      } catch {}
+
+      // helper fetchers
+      const fetchDbJson = async () => {
+        try {
+          const res = await fetch("/db.json", { cache: "no-store" });
+          if (!res.ok) return [];
+          const data = await res.json();
+          const list = data.localProducts || data.products || data.inventory?.localProducts || data.inventory?.products || data.items || [];
+          return normalizeFromApi(list);
+        } catch {
+          return [];
+        }
+      };
+      const fetchApi = async () => {
+        if (!API_BASE) return [];
+        try {
+          const res = await fetch(`${API_BASE}/localProducts`, { cache: "no-store" });
+          if (!res.ok) return [];
+          const list = await res.json();
+          return normalizeFromApi(list);
+        } catch {
+          return [];
+        }
+      };
+
+      // 2) Prefer /db.json, then API
+      const fromFile = await fetchDbJson();
+      if (fromFile.length) {
+        setProducts(fromFile);
+        return;
+      }
+      const fromApi = await fetchApi();
+      setProducts(fromApi.length ? fromApi : SAMPLE_SEED);
+    })();
   }, []);
 
-  // Save products to localStorage whenever they change (including empty array)
+  // Persist on every change (even empty array)
   useEffect(() => {
     if (typeof window === "undefined") return;
-    localStorage.setItem("products", JSON.stringify(products));
+    try {
+      localStorage.setItem("localProducts", JSON.stringify(products));
+    } catch (e) {
+      console.warn("localStorage save failed", e);
+    }
   }, [products]);
 
+  // ==== Derived list (filter + search) ====
   const filtered = useMemo(() => {
     return products.filter((p) => {
-      const inSearch = `${p.name} ${p.sku} ${p.brand} ${p.category}`
-        .toLowerCase()
-        .includes(search.toLowerCase());
+      const inSearch = `${p.name} ${p.sku} ${p.brand} ${p.category}`.toLowerCase().includes(search.toLowerCase());
       const inCat = filterCategory === "All" ? true : p.category === filterCategory;
       return inSearch && inCat;
     });
   }, [products, search, filterCategory]);
 
-  // CRUD
+  // ==== CRUD handlers ====
   const openCreate = () => {
     setEditingId(null);
     setForm({ ...emptyForm, id: crypto.randomUUID() });
     setShowModal(true);
   };
-
   const openEdit = (p) => {
     setEditingId(p.id);
     setForm({ ...p });
     setShowModal(true);
   };
-
   const saveProduct = (e) => {
     e.preventDefault();
     if (!form.name) return alert("Name is required");
@@ -98,7 +181,6 @@ export default function ProductCrudPage() {
     setShowModal(false);
     setEditingId(null);
   };
-
   const removeProduct = (id) => {
     if (!confirm("Delete this product?")) return;
     setProducts((prev) => prev.filter((x) => x.id !== id));
@@ -107,12 +189,10 @@ export default function ProductCrudPage() {
       setSelected(null);
     }
   };
-
   const onView = (p) => {
     setSelected(p);
     setShowDrawer(true);
   };
-
   const onFilePick = (file) => {
     if (!file) return;
     const reader = new FileReader();
@@ -120,8 +200,9 @@ export default function ProductCrudPage() {
     reader.readAsDataURL(file);
   };
 
+  // ==== UI ====
   return (
-    <div className="flex h-screen w-full bg-zinc-900 text-white overflow-hidden">
+    <div className="flex min-h-screen w-full bg-zinc-900 text-white overflow-hidden">
       {/* SidebarCollapsed - always visible on desktop */}
       <div className="hidden lg:flex fixed top-0 left-0 w-20 h-full bg-zinc-900 border-r border-zinc-800 z-40">
         <SidebarCollapsed />
@@ -148,7 +229,7 @@ export default function ProductCrudPage() {
             {/* Header */}
             <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
               <h1 className="text-2xl font-semibold tracking-tight">Product Management</h1>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
                 <select
                   value={filterCategory}
                   onChange={(e) => setFilterCategory(e.target.value)}
@@ -156,16 +237,14 @@ export default function ProductCrudPage() {
                 >
                   <option value="All">All Categories</option>
                   {CATEGORIES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
+                    <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search products..."
-                  className="w-64 rounded-xl border border-zinc-600 bg-zinc-700 px-3 py-2 text-sm shadow-sm text-white placeholder-gray-300"
+                  className="w-full sm:w-64 rounded-xl border border-zinc-600 bg-zinc-700 px-3 py-2 text-sm shadow-sm text-white placeholder-gray-300"
                 />
                 <button
                   type="button"
@@ -177,19 +256,55 @@ export default function ProductCrudPage() {
               </div>
             </div>
 
-            {/* Table */}
-            <div className="overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-700 shadow-sm">
-              <table className="min-w-full divide-y divide-zinc-600">
+            {/* Mobile list (<md) */}
+            <div className="md:hidden grid gap-3">
+              {filtered.map((p) => (
+                  <tr key={p.id} className="hover:bg-zinc-600">
+                    <td className="px-4 py-3">
+                      {p.image ? (
+                        <img src={p.image} alt={p.name} className="h-10 w-10 rounded-md object-cover ring-1 ring-gray-400" />
+                      ) : (
+                        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-zinc-500 text-xs text-gray-300 ring-1 ring-gray-400">IMG</div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm font-medium text-white">{p.name}</td>
+                    <td className="px-4 py-3 text-sm text-gray-300 hidden lg:table-cell">{p.sku}</td>
+                    <td className="px-4 py-3 text-sm text-gray-300 hidden md:table-cell">{p.category}</td>
+                    <td className="px-4 py-3 text-sm text-white">${Number(p.price || 0).toFixed(2)}</td>
+                    <td className="px-4 py-3 text-xs hidden sm:table-cell"><span className="rounded-full bg-zinc-500 px-2 py-1 text-gray-100">{p.status}</span></td>
+                    <td className="px-4 py-3 text-sm text-gray-300 hidden lg:table-cell">{p.stock}</td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex flex-wrap items-center justify-end gap-2">
+                        <button type="button" onClick={() => onView(p)} className="rounded-lg border border-gray-400 px-3 py-1.5 text-xs sm:text-sm hover:bg-zinc-500">View</button>
+                        <button type="button" onClick={() => openEdit(p)} className="rounded-lg border border-gray-400 px-3 py-1.5 text-xs sm:text-sm hover:bg-zinc-500">Edit</button>
+                        <button type="button" onClick={() => removeProduct(p.id)} className="rounded-lg border border-red-400 px-3 py-1.5 text-xs sm:text-sm text-red-400 hover:bg-red-900">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              {filtered.length === 0 && (
+                <div className="rounded-2xl border border-zinc-700 bg-zinc-700 p-6 text-center text-sm text-gray-300">
+                  No products found or API failed.
+                  <div className="mt-3">
+                    <button type="button" onClick={() => setProducts(SAMPLE_SEED)} className="rounded-xl border border-zinc-600 px-3 py-1.5 hover:bg-zinc-800">Load demo data</button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Desktop table (≥ md) */}
+            <div className="hidden md:block overflow-x-auto rounded-2xl border border-zinc-700 bg-zinc-700 shadow-sm">
+              <table className="min-w-[900px] w-full divide-y divide-zinc-600">
                 <thead className="bg-zinc-700">
                   <tr>
-                    {["Image", "Name", "SKU", "Category", "Price", "Status", "Stock", "Actions"].map((h) => (
-                      <th
-                        key={h}
-                        className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-200"
-                      >
-                        {h}
-                      </th>
-                    ))}
+                    <th className="px-4 py-3 text-left text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-gray-200">Image</th>
+                    <th className="px-4 py-3 text-left text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-gray-200">Name</th>
+                    <th className="px-4 py-3 text-left text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-gray-200 hidden lg:table-cell">SKU</th>
+                    <th className="px-4 py-3 text-left text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-gray-200 hidden md:table-cell">Category</th>
+                    <th className="px-4 py-3 text-left text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-gray-200">Price</th>
+                    <th className="px-4 py-3 text-left text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-gray-200 hidden sm:table-cell">Status</th>
+                    <th className="px-4 py-3 text-left text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-gray-200 hidden lg:table-cell">Stock</th>
+                    <th className="px-4 py-3 text-right text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-gray-200">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-600">
@@ -197,48 +312,22 @@ export default function ProductCrudPage() {
                     <tr key={p.id} className="hover:bg-zinc-600">
                       <td className="px-4 py-3">
                         {p.image ? (
-                          <img
-                            src={p.image}
-                            alt={p.name}
-                            className="h-10 w-10 rounded-md object-cover ring-1 ring-gray-400"
-                          />
+                          <img src={p.image} alt={p.name} className="h-10 w-10 rounded-md object-cover ring-1 ring-gray-400" />
                         ) : (
-                          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-zinc-500 text-xs text-gray-300 ring-1 ring-gray-400">
-                            IMG
-                          </div>
+                          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-zinc-500 text-xs text-gray-300 ring-1 ring-gray-400">IMG</div>
                         )}
                       </td>
                       <td className="px-4 py-3 text-sm font-medium text-white">{p.name}</td>
                       <td className="px-4 py-3 text-sm text-gray-300">{p.sku}</td>
                       <td className="px-4 py-3 text-sm text-gray-300">{p.category}</td>
-                      <td className="px-4 py-3 text-sm text-white">${Number(p.price).toFixed(2)}</td>
-                      <td className="px-4 py-3 text-xs">
-                        <span className="rounded-full bg-zinc-500 px-2 py-1 text-gray-100">{p.status}</span>
-                      </td>
+                      <td className="px-4 py-3 text-sm text-white">${Number(p.price || 0).toFixed(2)}</td>
+                      <td className="px-4 py-3 text-xs"><span className="rounded-full bg-zinc-500 px-2 py-1 text-gray-100">{p.status}</span></td>
                       <td className="px-4 py-3 text-sm text-gray-300">{p.stock}</td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => onView(p)}
-                            className="rounded-lg border border-gray-400 px-3 py-1.5 text-sm hover:bg-zinc-500"
-                          >
-                            View
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => openEdit(p)}
-                            className="rounded-lg border border-gray-400 px-3 py-1.5 text-sm hover:bg-zinc-500"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => removeProduct(p.id)}
-                            className="rounded-lg border border-red-400 px-3 py-1.5 text-sm text-red-400 hover:bg-red-900"
-                          >
-                            Delete
-                          </button>
+                          <button type="button" onClick={() => onView(p)} className="rounded-lg border border-gray-400 px-3 py-1.5 text-sm hover:bg-zinc-500">View</button>
+                          <button type="button" onClick={() => openEdit(p)} className="rounded-lg border border-gray-400 px-3 py-1.5 text-sm hover:bg-zinc-500">Edit</button>
+                          <button type="button" onClick={() => removeProduct(p.id)} className="rounded-lg border border-red-400 px-3 py-1.5 text-sm text-red-400 hover:bg-red-900">Delete</button>
                         </div>
                       </td>
                     </tr>
@@ -246,7 +335,10 @@ export default function ProductCrudPage() {
                   {filtered.length === 0 && (
                     <tr>
                       <td colSpan={8} className="px-4 py-10 text-center text-sm text-gray-400">
-                        No products found.
+                        No products found or API failed.
+                        <div className="mt-3">
+                          <button type="button" onClick={() => setProducts(SAMPLE_SEED)} className="rounded-xl border border-zinc-600 px-3 py-1.5 text-sm hover:bg-zinc-800">Load demo data</button>
+                        </div>
                       </td>
                     </tr>
                   )}
@@ -335,7 +427,7 @@ export default function ProductCrudPage() {
       )}
 
       {/* Drawer: View details */}
-      <div className={`fixed inset-y-0 right-0 z-[55] w-full max-w-md transform bg-zinc-900 text-white shadow-2xl transition-transform duration-300 ${showDrawer ? "translate-x-0" : "translate-x-full"}`}>
+      <div className={`fixed inset-y-0 right-0 z-[55] w-full max-w-full md:max-w-md transform bg-zinc-900 text-white shadow-2xl transition-transform duration-300 ${showDrawer ? "translate-x-0" : "translate-x-full"}`}>
         <div className="flex items-center justify-between border-b border-zinc-700 p-4">
           <h3 className="text-base font-semibold">Product Details</h3>
           <button type="button" onClick={() => setShowDrawer(false)} className="rounded-full p-2 hover:bg-zinc-800">✕</button>
@@ -352,7 +444,7 @@ export default function ProductCrudPage() {
             <div className="grid grid-cols-2 gap-3 text-sm">
               <Info label="Brand" value={selected.brand} />
               <Info label="Category" value={selected.category} />
-              <Info label="Price" value={`$${Number(selected.price).toFixed(2)}`} />
+              <Info label="Price" value={`$${Number(selected.price || 0).toFixed(2)}`} />
               <Info label="Status" value={selected.status} />
               <Info label="Stock" value={selected.stock} />
             </div>
