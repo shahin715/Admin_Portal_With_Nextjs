@@ -77,7 +77,7 @@ export default function ProductCrudPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    console.log("ProductCrudPage loaded at path:", window.location.pathname); // Debug log
+    console.log("ProductCrudPage loaded at path:", window.location.pathname, "Search:", window.location.search); // Enhanced debug log
 
     // Clear localStorage temporarily for debugging
     localStorage.removeItem("localProducts");

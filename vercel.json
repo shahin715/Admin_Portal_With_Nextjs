@@ -1,0 +1,12 @@
+{
+  "routes": [
+    {
+      "src": "/product-management",
+      "dest": "/productMangement"
+    },
+    {
+      "src": "/productMangement",
+      "dest": "/productMangement"
+    }
+  ]
+}
